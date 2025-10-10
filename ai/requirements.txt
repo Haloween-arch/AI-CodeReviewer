@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+pylint
+flake8
+bandit

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+</head>
+<body>
+  <h2>Dashboard</h2>
+  <button id="checkSubmissions">Get Submissions</button>
+  <button id="deleteAccount">Delete Account</button>
+
+  <pre id="output"></pre>
+
+  <script>
+    const token = localStorage.getItem("jwt");
+    if (!token) {
+      alert("Not logged in!");
+      window.location = "login.html";
+    }
+
+    document.getElementById('checkSubmissions').addEventListener('click', async () => {
+      const res = await fetch("http://localhost:8080/submissions", {
+        headers: { "Authorization": "Bearer " + token }
+      });
+      document.getElementById('output').textContent = await res.text();
+    });
+
+    document.getElementById('deleteAccount').addEventListener('click', async () => {
+      const res = await fetch("http://localhost:8080/auth/delete", {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer " + token }
+      });
+      document.getElementById('output').textContent = await res.text();
+      if (res.ok) {
+        localStorage.removeItem("jwt");
+        window.location = "index.html";
+      }
+    });
+  </script>
+</body>
+</html>
