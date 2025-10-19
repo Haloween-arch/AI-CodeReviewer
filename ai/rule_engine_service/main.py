@@ -4,27 +4,21 @@ import ast
 
 app = FastAPI(title="Rule Engine Service")
 
-
 class NestedLoopVisitor(ast.NodeVisitor):
     def __init__(self):
         self.max_depth = 0
 
-    def visit_For(self, node):
-        self._visit_loop(node, 1)
-        self.generic_visit(node)
-
-    def visit_While(self, node):
-        self._visit_loop(node, 1)
+    def visit_FunctionDef(self, node):
+        self._visit_loop(node, 0)
         self.generic_visit(node)
 
     def _visit_loop(self, node, depth):
-        # Update max depth when we enter a loop
-        self.max_depth = max(self.max_depth, depth)
-
-        for child in ast.iter_child_nodes(node):
+        for child in ast.walk(node):
             if isinstance(child, (ast.For, ast.While)):
-                self._visit_loop(child, depth + 1)
-
+                self.max_depth = max(self.max_depth, depth + 1)
+                for inner in ast.iter_child_nodes(child):
+                    if isinstance(inner, (ast.For, ast.While)):
+                        self._visit_loop(inner, depth + 1)
 
 @app.post("/analyze/rule")
 async def analyze_rule(request: Request):
@@ -40,13 +34,14 @@ async def analyze_rule(request: Request):
 
     visitor = NestedLoopVisitor()
     visitor.visit(tree)
+    nested = visitor.max_depth
 
     issues = []
-    if visitor.max_depth >= 2:
+    if nested >= 2:
         issues.append({
             "pattern": "nested_loops",
-            "depth": visitor.max_depth,
-            "message": f"Nested loops detected (depth {visitor.max_depth}) — consider refactoring"
+            "depth": nested,
+            "message": "Nested loops detected — consider refactoring"
         })
 
     return {"rule_issues": issues}
