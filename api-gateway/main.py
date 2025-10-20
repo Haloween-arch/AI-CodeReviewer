@@ -25,7 +25,7 @@ MICROSERVICES = {
     "syntax": (8002, ["python", "-m", "uvicorn", "ai.syntax_service.main:app", "--port", "8002"]),
     "style": (8001, ["python", "-m", "uvicorn", "ai.style_service.main:app", "--port", "8001"]),
     "security": (8003, ["python", "-m", "uvicorn", "ai.security_service.main:app", "--port", "8003"]),
-    "quality": (8004, ["python", "-m", "uvicorn", "ai.quality_service.main:app", "--port", "8004"]),
+    "quality": (8005, ["python", "-m", "uvicorn", "ai.quality_service.main:app", "--port", "8005"]),
     "rule": (8006, ["python", "-m", "uvicorn", "ai.rule_engine_service.main:app", "--port", "8006"]),
     "report": (8007, ["python", "-m", "uvicorn", "ai.report_service.main:app", "--port", "8007"]),
 }
@@ -34,7 +34,7 @@ SERVICE_ENDPOINTS = {
     "syntax": "http://127.0.0.1:8002/analyze/syntax",
     "style": "http://127.0.0.1:8001/analyze/style",
     "security": "http://127.0.0.1:8003/analyze/security",
-    "quality": "http://127.0.0.1:8004/analyze/quality",
+    "quality": "http://127.0.0.1:8005/analyze/quality",
     "rule": "http://127.0.0.1:8006/analyze/rule",
     "report": "http://127.0.0.1:8007/report/generate"
 }
