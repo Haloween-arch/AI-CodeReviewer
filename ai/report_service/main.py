@@ -8,7 +8,7 @@ SERVICE_URLS = {
     "style": os.getenv("STYLE_SERVICE", "http://127.0.0.1:8001"),
     "syntax": os.getenv("SYNTAX_SERVICE", "http://127.0.0.1:8002"),
     "security": os.getenv("SECURITY_SERVICE", "http://127.0.0.1:8003"),
-    "quality": os.getenv("QUALITY_SERVICE", "http://127.0.0.1:8005"),
+    "quality": os.getenv("QUALITY_SERVICE", "http://127.0.0.1:8004"),
     "rule": os.getenv("RULE_SERVICE", "http://127.0.0.1:8006"),
 }
 
