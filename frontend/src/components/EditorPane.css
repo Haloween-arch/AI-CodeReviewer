@@ -1,0 +1,445 @@
+/* ===========================
+   ANIMATIONS
+   =========================== */
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ===========================
+   MAIN CONTAINER
+   =========================== */
+
+.editor-pane-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #0f172a;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.editor-pane-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* ===========================
+   TOOLBAR
+   =========================== */
+
+.editor-toolbar {
+  background: rgba(15, 23, 42, 0.98) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.15) !important;
+  padding: 12px 20px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: slideDown 0.4s ease-out;
+  position: relative;
+  z-index: 100;
+}
+
+.editor-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.language-chip {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15)) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  height: 28px !important;
+  transition: all 0.3s ease !important;
+}
+
+.language-chip:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(139, 92, 246, 0.25)) !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.language-chip .MuiChip-icon {
+  color: white !important;
+  margin-left: 8px !important;
+}
+
+.lang-emoji {
+  font-size: 1rem;
+  filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.5));
+}
+
+.editor-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(148, 163, 184, 0.8);
+  font-size: 0.813rem;
+  font-weight: 500;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.3s ease;
+}
+
+.stat-item:hover {
+  color: white;
+}
+
+.stat-icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.stat-divider {
+  color: rgba(59, 130, 246, 0.3);
+  font-weight: 300;
+}
+
+/* ===========================
+   EDITOR ACTIONS
+   =========================== */
+
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-action-btn {
+  background: rgba(59, 130, 246, 0.08) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  color: rgba(148, 163, 184, 0.9) !important;
+  transition: all 0.3s ease !important;
+  padding: 8px !important;
+}
+
+.editor-action-btn:hover {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.editor-action-btn.danger {
+  background: rgba(239, 68, 68, 0.08) !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+}
+
+.editor-action-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.action-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ===========================
+   EDITOR WRAPPER
+   =========================== */
+
+.editor-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.editor-glow-effect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: radial-gradient(ellipse at top, rgba(59, 130, 246, 0.08), transparent);
+  pointer-events: none;
+  z-index: 1;
+  animation: glow 4s ease-in-out infinite;
+}
+
+/* Monaco Editor Overrides */
+.editor-wrapper .monaco-editor {
+  font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', 'Consolas', 'Courier New', monospace !important;
+}
+
+.editor-wrapper .monaco-editor .margin {
+  background: #0f172a !important;
+}
+
+.editor-wrapper .monaco-editor .line-numbers {
+  color: rgba(71, 85, 105, 0.8) !important;
+  font-weight: 500;
+}
+
+.editor-wrapper .monaco-editor .current-line ~ .line-numbers {
+  color: #3b82f6 !important;
+  font-weight: 600;
+}
+
+.editor-wrapper .monaco-editor .view-line {
+  transition: background-color 0.2s ease;
+}
+
+.editor-wrapper .monaco-scrollable-element > .scrollbar > .slider {
+  background: rgba(59, 130, 246, 0.3) !important;
+  border-radius: 4px;
+}
+
+.editor-wrapper .monaco-scrollable-element > .scrollbar > .slider:hover {
+  background: rgba(59, 130, 246, 0.5) !important;
+}
+
+/* ===========================
+   STATUS BAR
+   =========================== */
+
+.editor-status-bar {
+  background: rgba(15, 23, 42, 0.98) !important;
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(59, 130, 246, 0.15) !important;
+  padding: 8px 20px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  animation: slideDown 0.4s ease-out 0.1s backwards;
+  position: relative;
+  z-index: 100;
+}
+
+.status-left,
+.status-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(148, 163, 184, 0.8);
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  transition: all 0.3s ease;
+}
+
+.status-indicator:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: white;
+}
+
+.status-indicator.ready {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.05);
+  color: #10b981;
+}
+
+.status-indicator.ready:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.status-item {
+  color: rgba(148, 163, 184, 0.7);
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.status-item:hover {
+  color: white;
+  cursor: default;
+}
+
+.status-divider {
+  color: rgba(59, 130, 246, 0.2);
+  font-weight: 300;
+}
+
+/* ===========================
+   MONACO CUSTOMIZATIONS
+   =========================== */
+
+/* Selection highlight */
+.monaco-editor .selected-text {
+  background: rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Find widget */
+.monaco-editor .find-widget {
+  background: rgba(15, 23, 42, 0.98) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Suggest widget */
+.monaco-editor .suggest-widget {
+  background: rgba(15, 23, 42, 0.98) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused {
+  background: rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Parameter hints */
+.monaco-editor .parameter-hints-widget {
+  background: rgba(15, 23, 42, 0.98) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Hover widget */
+.monaco-editor .monaco-hover {
+  background: rgba(15, 23, 42, 0.98) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* ===========================
+   RESPONSIVE
+   =========================== */
+
+@media (max-width: 768px) {
+  .editor-toolbar {
+    padding: 10px 16px !important;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .editor-info {
+    flex-wrap: wrap;
+  }
+
+  .editor-stats {
+    font-size: 0.75rem;
+    gap: 8px;
+  }
+
+  .editor-actions {
+    order: -1;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .stat-item {
+    gap: 4px;
+  }
+
+  .editor-status-bar {
+    padding: 6px 16px !important;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .editor-stats .stat-item:nth-child(3) {
+    display: none;
+  }
+
+  .status-right .status-item:first-child {
+    display: none;
+  }
+}
+
+/* ===========================
+   ACCESSIBILITY
+   =========================== */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .pulse-dot {
+    animation: none !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .editor-toolbar,
+  .editor-status-bar {
+    border-color: #3b82f6 !important;
+  }
+  
+  .language-chip,
+  .editor-action-btn {
+    border-width: 2px !important;
+  }
+}

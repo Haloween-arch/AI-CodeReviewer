@@ -1,5 +1,43 @@
-fastapi
-uvicorn
-pylint
+
+# -------------------------
+# CORS / Middlewares
+# -------------------------
+starlette
+
+# -------------------------
+# Gemini AI API (Google)
+# -------------------------
+google-generativeai
+
+# -------------------------
+# Syntax Analysis / Parsers
+# -------------------------
+tree-sitter
+tree-sitter-python
+tree-sitter-javascript
+tree-sitter-java
+tree-sitter-cpp
+
+# -------------------------
+# Code Quality
+# -------------------------
+radon
 flake8
+pylint
+
+# -------------------------
+# Security Scanners
+# -------------------------
 bandit
+
+# -------------------------
+# Report Service (Optional)
+# -------------------------
+fpdf2
+reportlab
+
+# -------------------------
+# Utils
+# -------------------------
+numpy
+rich

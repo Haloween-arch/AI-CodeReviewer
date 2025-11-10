@@ -1,0 +1,475 @@
+/* ===========================
+   CHARTS PANEL ANIMATIONS
+   =========================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes pulseRing {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* ===========================
+   MAIN CONTAINER
+   =========================== */
+
+.charts-panel-container {
+  padding: 0;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.score-circles-grid {
+  margin-bottom: 32px !important;
+}
+
+.main-charts-grid {
+  margin-bottom: 32px !important;
+}
+
+/* ===========================
+   CHART CARDS
+   =========================== */
+
+.chart-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95)) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  border-radius: 20px !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+.chart-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+  animation: shimmer 3s infinite;
+}
+
+.chart-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  box-shadow: 0 16px 48px rgba(59, 130, 246, 0.25) !important;
+}
+
+.chart-card .MuiCardContent-root {
+  padding: 28px !important;
+}
+
+/* ===========================
+   CHART HEADERS
+   =========================== */
+
+.chart-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.chart-title {
+  color: white !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 4px !important;
+}
+
+.chart-subtitle {
+  color: rgba(148, 163, 184, 0.7) !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ===========================
+   SCORE CIRCLES
+   =========================== */
+
+.score-card {
+  position: relative;
+  overflow: visible !important;
+}
+
+.score-circle-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.score-circle-svg {
+  filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.3));
+}
+
+.score-circle-bg {
+  transition: all 0.3s ease;
+}
+
+.score-circle-progress {
+  transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: pulseRing 3s ease-in-out infinite;
+}
+
+.score-circle-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.score-circle-icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+}
+
+.score-circle-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+  text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+.score-circle-label {
+  font-size: 0.875rem;
+  color: rgba(148, 163, 184, 0.9);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 8px;
+}
+
+/* ===========================
+   CUSTOM TOOLTIP
+   =========================== */
+
+.custom-tooltip {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98)) !important;
+  border: 1px solid rgba(59, 130, 246, 0.4) !important;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.tooltip-label {
+  color: rgba(148, 163, 184, 0.9);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 4px 0;
+}
+
+.tooltip-value {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===========================
+   STATS BAR
+   =========================== */
+
+.stats-bar {
+  margin-top: 16px !important;
+}
+
+.stat-card-inline {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95)) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  border-radius: 16px !important;
+  transition: all 0.3s ease !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card-inline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.stat-card-inline.security::before {
+  background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+}
+
+.stat-card-inline.style::before {
+  background: linear-gradient(90deg, transparent, #8b5cf6, transparent);
+}
+
+.stat-card-inline.quality::before {
+  background: linear-gradient(90deg, transparent, #10b981, transparent);
+}
+
+.stat-card-inline:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(59, 130, 246, 0.2) !important;
+}
+
+.stat-card-inline .MuiCardContent-root {
+  padding: 20px !important;
+}
+
+.stat-inline-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.stat-inline-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  flex-shrink: 0;
+}
+
+.stat-card-inline.security .stat-inline-icon {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.stat-card-inline.style .stat-inline-icon {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.stat-card-inline.quality .stat-inline-icon {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.stat-inline-info {
+  flex: 1;
+}
+
+.stat-inline-label {
+  color: rgba(148, 163, 184, 0.8) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.stat-inline-value {
+  color: white !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-progress {
+  height: 6px !important;
+  border-radius: 3px !important;
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+.stat-progress .MuiLinearProgress-bar {
+  border-radius: 3px !important;
+  transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.stat-progress.security .MuiLinearProgress-bar {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa) !important;
+}
+
+.stat-progress.style .MuiLinearProgress-bar {
+  background: linear-gradient(90deg, #8b5cf6, #a78bfa) !important;
+}
+
+.stat-progress.quality .MuiLinearProgress-bar {
+  background: linear-gradient(90deg, #10b981, #34d399) !important;
+}
+
+/* ===========================
+   EMPTY STATE
+   =========================== */
+
+.charts-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 400px;
+  text-align: center;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.empty-icon-wrapper {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.empty-icon-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  opacity: 0.3;
+  filter: blur(20px);
+  z-index: -1;
+}
+
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  color: rgba(148, 163, 184, 0.4);
+}
+
+.empty-title {
+  color: white !important;
+  font-weight: 600 !important;
+  margin-bottom: 8px !important;
+}
+
+.empty-subtitle {
+  color: rgba(148, 163, 184, 0.6) !important;
+  max-width: 400px;
+}
+
+/* ===========================
+   CHART SPECIFIC STYLES
+   =========================== */
+
+/* Recharts global overrides */
+.recharts-wrapper {
+  cursor: default !important;
+}
+
+.recharts-surface {
+  overflow: visible !important;
+}
+
+.recharts-legend-wrapper {
+  padding-top: 20px !important;
+}
+
+.recharts-legend-item-text {
+  color: rgba(148, 163, 184, 0.8) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.recharts-text {
+  fill: rgba(148, 163, 184, 0.8);
+  font-size: 12px;
+}
+
+.recharts-cartesian-axis-line,
+.recharts-cartesian-axis-tick-line {
+  stroke: rgba(59, 130, 246, 0.2);
+}
+
+.recharts-pie-label-text {
+  fill: rgba(226, 232, 240, 0.9) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+/* ===========================
+   RESPONSIVE
+   =========================== */
+
+@media (max-width: 960px) {
+  .score-circles-grid {
+    margin-bottom: 24px !important;
+  }
+  
+  .main-charts-grid {
+    margin-bottom: 24px !important;
+  }
+  
+  .chart-card .MuiCardContent-root {
+    padding: 20px !important;
+  }
+  
+  .score-circle-icon {
+    font-size: 2rem;
+  }
+  
+  .score-circle-value {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .charts-panel-container {
+    padding: 16px;
+  }
+  
+  .stat-inline-content {
+    gap: 12px;
+  }
+  
+  .stat-inline-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+  }
+}

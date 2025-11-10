@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Code Reviewer - Test Client</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; background: #f9f9f9; }
+    textarea { width: 100%; height: 200px; font-family: monospace; padding: 0.5rem; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; font-size: 16px; }
+    pre { background: #272822; color: #f8f8f2; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+    .key { color: #66d9ef; }
+    .string { color: #a6e22e; }
+    .number { color: #ae81ff; }
+    .boolean { color: #fd971f; }
+    .null { color: #f44747; }
+  </style>
+</head>
+<body>
+  <h1>AI Code Reviewer - Test Client</h1>
+
+  <label for="language">Language:</label>
+  <select id="language">
+    <option value="python">Python</option>
+    <option value="javascript">JavaScript</option>
+    <option value="java">Java</option>
+  </select>
+
+  <br><br>
+  <textarea id="code"># Example Python code
+x=  5
+def f():
+    return  1
+  </textarea>
+  <br>
+  <button onclick="analyze()">Analyze Code</button>
+
+  <h2>Results</h2>
+  <pre id="output">Waiting for response...</pre>
+
+  <script>
+    function syntaxHighlight(json) {
+      if (typeof json != 'string') {
+        json = JSON.stringify(json, undefined, 2);
+      }
+      json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return json.replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        let cls = 'number';
+        if (/^"/.test(match)) {
+          if (/:$/.test(match)) {
+            cls = 'key';
+          } else {
+            cls = 'string';
+          }
+        } else if (/true|false/.test(match)) {
+          cls = 'boolean';
+        } else if (/null/.test(match)) {
+          cls = 'null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+      });
+    }
+
+    async function analyze() {
+      const code = document.getElementById("code").value;
+      const language = document.getElementById("language").value;
+      const output = document.getElementById("output");
+      output.textContent = "Analyzing...";
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/report/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, language })
+        });
+        const data = await res.json();
+        output.innerHTML = syntaxHighlight(data);
+      } catch (err) {
+        output.textContent = "Error: " + err;
+      }
+    }
+  </script>
+</body>
+</html>
