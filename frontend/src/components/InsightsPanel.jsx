@@ -1,402 +1,677 @@
-// src/components/IssuesPanel.jsx
-import React, { useMemo, useState } from "react";
+import React from "react";
 import {
-  Grid,
   Card,
   CardContent,
   Typography,
-  Chip,
+  Grid,
   Box,
-  IconButton,
-  Collapse,
   Divider,
-  Tooltip,
-  LinearProgress,
+  Chip,
 } from "@mui/material";
 
-import CodeIcon from "@mui/icons-material/Code";
-import BrushIcon from "@mui/icons-material/Brush";
-import SecurityIcon from "@mui/icons-material/Security";
-import SpeedIcon from "@mui/icons-material/Speed";
-import RuleIcon from "@mui/icons-material/Rule";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-
 import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip as ReTooltip,
   ResponsiveContainer,
   BarChart,
   Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RTooltip,
   PieChart,
   Pie,
   Cell,
   Legend,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  Area,
+  AreaChart,
 } from "recharts";
 
-// ----------------------------------------------------
-// icons / colors
-// ----------------------------------------------------
-const icons = {
-  syntax: <CodeIcon />,
-  style: <BrushIcon />,
-  security: <SecurityIcon />,
-  quality: <SpeedIcon />,
-  rule: <RuleIcon />,
+const COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e"];
+const GRADIENT_COLORS = {
+  primary: ["#3b82f6", "#8b5cf6"],
+  success: ["#22c55e", "#10b981"],
+  warning: ["#f59e0b", "#ef4444"],
 };
 
-const severityColors = {
-  critical: "#ef4444",
-  high: "#f97316",
-  medium: "#eab308",
-  low: "#3b82f6",
-};
-
-const catOrder = ["syntax", "style", "security", "quality", "rule"];
-const catLabels = {
-  syntax: "Syntax",
-  style: "Style",
-  security: "Security",
-  quality: "Quality",
-  rule: "Rule",
-};
-
-const donutColors = ["#ef4444", "#f97316", "#eab308", "#3b82f6"];
-
-// ----------------------------------------------------
-// Small reusable components
-// ----------------------------------------------------
-function IssueCard({ issue }) {
-  return (
-    <Card
-      sx={{
-        background: "#1e293b",
-        color: "white",
-        borderLeft: `4px solid ${severityColors[issue.severity] || "#4b5563"}`,
-        mb: 2,
-      }}
-    >
-      <CardContent>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box display="flex" alignItems="center" gap={1}>
-            {icons[issue.type]}
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              {(issue.type || "").toUpperCase()}
-            </Typography>
-          </Box>
-          <Chip
-            label={(issue.severity || "info").toUpperCase()}
-            size="small"
-            sx={{
-              bgcolor: severityColors[issue.severity] || "#64748b",
-              color: "white",
-              fontWeight: 600,
-            }}
-          />
-        </Box>
-
-        <Typography sx={{ mt: 1, fontSize: 14 }}>{issue.message}</Typography>
-
-        <Typography sx={{ mt: 0.5, fontSize: 12, opacity: 0.7 }}>
-          Line: {issue.line ?? 0}
-        </Typography>
-
-        {issue.suggestion && (
-          <Box
-            sx={{
-              mt: 2,
-              p: 1.5,
-              borderRadius: 1,
-              background: "#0f172a",
-              border: "1px solid #334155",
-            }}
-          >
-            <Typography
-              variant="caption"
-              sx={{ opacity: 0.7, display: "block", mb: 0.5 }}
-            >
-              Suggestion
-            </Typography>
-            <Typography sx={{ fontSize: 13 }}>{issue.suggestion}</Typography>
-          </Box>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function RawJSON({ label, data }) {
-  const json = useMemo(() => JSON.stringify(data || {}, null, 2), [data]);
-
-  return (
-    <Box sx={{ mt: 2 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Typography variant="caption" sx={{ opacity: 0.7 }}>
-          Raw {label} JSON
-        </Typography>
-        <Tooltip title="Copy JSON">
-          <IconButton
-            size="small"
-            onClick={() => navigator.clipboard.writeText(json)}
-            sx={{ color: "#94a3b8" }}
-          >
-            <ContentCopyIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </Box>
-
+export default function InsightsPanel({ results }) {
+  if (!results || !results.summary) {
+    return (
       <Box
         sx={{
-          mt: 1,
-          background: "#0f172a",
-          color: "#cbd5e1",
-          p: 1.5,
-          borderRadius: 1,
-          fontSize: 13,
-          fontFamily: "ui-monospace",
-          whiteSpace: "pre-wrap",
-          minHeight: 80,
-          maxHeight: 250,
-          overflowY: "auto",
+          p: 6,
+          textAlign: "center",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          borderRadius: 3,
+          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
         }}
       >
-        {json}
-      </Box>
-    </Box>
-  );
-}
-
-// Collapsible column per category (hook isolated here)
-function CategoryPanel({ cat, items, raw }) {
-  const [open, setOpen] = useState(true);
-  const count = items?.length || 0;
-
-  return (
-    <Card sx={{ background: "#0f172a", color: "white", height: "100%" }}>
-      <CardContent>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          onClick={() => setOpen((v) => !v)}
-          sx={{ cursor: "pointer" }}
+        <Typography
+          variant="h5"
+          sx={{
+            color: "white",
+            fontWeight: 600,
+            mb: 1,
+            textShadow: "0 2px 10px rgba(0,0,0,0.2)",
+          }}
         >
-          <Box display="flex" alignItems="center" gap={1}>
-            {icons[cat]}
-            <Typography variant="h6">
-              {catLabels[cat] || cat} ({count})
-            </Typography>
-          </Box>
-          {open ? (
-            <ExpandLessIcon sx={{ color: "#94a3b8" }} />
-          ) : (
-            <ExpandMoreIcon sx={{ color: "#94a3b8" }} />
-          )}
-        </Box>
-
-        <Divider sx={{ opacity: 0.2, mt: 1, mb: 2 }} />
-
-        <Collapse in={open} unmountOnExit>
-          {count === 0 ? (
-            <Typography sx={{ opacity: 0.6 }}>
-              No {catLabels[cat] || cat} issues found.
-            </Typography>
-          ) : (
-            items.map((issue, i) => <IssueCard key={i} issue={issue} />)
-          )}
-
-          <RawJSON label={catLabels[cat] || cat} data={raw} />
-        </Collapse>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Simple metric tile
-function StatCard({ title, value, accent }) {
-  return (
-    <Card sx={{ background: "#0f172a", color: "white" }}>
-      <CardContent>
-        <Typography variant="overline" sx={{ opacity: 0.7 }}>
-          {title}
+          ✨ Awaiting Analysis
         </Typography>
-        <Typography variant="h4" sx={{ fontWeight: 800, color: accent }}>
-          {value}
+        <Typography sx={{ color: "rgba(255,255,255,0.8)" }}>
+          Insights will appear here after running <b>Review Code</b>
         </Typography>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Circular-ish score shown as linear progress + label (lightweight)
-function ScoreCard({ title, score = 0, color = "#22c55e" }) {
-  return (
-    <Card sx={{ background: "#0f172a", color: "white" }}>
-      <CardContent>
-        <Typography variant="overline" sx={{ opacity: 0.7 }}>
-          {title}
-        </Typography>
-        <Box display="flex" alignItems="center" gap={2} sx={{ mt: 1 }}>
-          <Box sx={{ flex: 1 }}>
-            <LinearProgress
-              variant="determinate"
-              value={Math.max(0, Math.min(100, score))}
-              sx={{
-                height: 10,
-                borderRadius: 5,
-                "& .MuiLinearProgress-bar": { backgroundColor: color },
-              }}
-            />
-          </Box>
-          <Typography variant="h6" sx={{ width: 60, textAlign: "right" }}>
-            {Math.round(score)}%
-          </Typography>
-        </Box>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ----------------------------------------------------
-// Main component
-// ----------------------------------------------------
-export default function IssuesPanel({ results }) {
-  if (!results) {
-    return (
-      <Box sx={{ p: 4, color: "gray", textAlign: "center" }}>
-        No results yet. Run <b>Review Code</b>.
       </Box>
     );
   }
 
-  const issues = results.issues || [];
-  const raw = results.raw || {};
-  const summary = results.summary || {};
+  const summary = results.summary;
 
-  // group by type
-  const grouped = useMemo(() => {
-    const g = {};
-    for (const i of issues) {
-      const t = i.type || "other";
-      if (!g[t]) g[t] = [];
-      g[t].push(i);
+  // Score Data for Graphs
+  const scoreData = [
+    { name: "Quality", score: summary.qualityScore || 0 },
+    { name: "Security", score: summary.securityScore || 0 },
+  ];
+
+  // Time Complexity Insights
+  const timeData = [
+    {
+      name: "Time Complexity",
+      score: summary.timeComplexityScore || 40,
+    },
+    {
+      name: "Space Efficiency",
+      score: summary.spaceComplexityScore || 60,
+    },
+  ];
+
+  // Radar Chart Data
+  const radarData = [
+    {
+      subject: "Quality",
+      value: summary.qualityScore || 0,
+      fullMark: 100,
+    },
+    {
+      subject: "Security",
+      value: summary.securityScore || 0,
+      fullMark: 100,
+    },
+    {
+      subject: "Performance",
+      value: summary.timeComplexityScore || 40,
+      fullMark: 100,
+    },
+    {
+      subject: "Efficiency",
+      value: summary.spaceComplexityScore || 60,
+      fullMark: 100,
+    },
+    {
+      subject: "Maintainability",
+      value: 75,
+      fullMark: 100,
+    },
+  ];
+
+  // Severity Distribution Pie Chart
+  const severityData = [
+    { name: "Critical", value: summary.critical },
+    { name: "High", value: summary.high },
+    { name: "Medium", value: summary.medium },
+    { name: "Low", value: summary.low },
+  ];
+
+  // Hotspot detection
+  const hotspotScore =
+    summary.critical * 4 +
+    summary.high * 3 +
+    summary.medium * 2 +
+    summary.low * 1;
+
+  const hotspotLabel =
+    hotspotScore >= 12
+      ? "🔥 High Risk"
+      : hotspotScore >= 6
+      ? "⚠ Moderate Risk"
+      : "✅ Safe Zone";
+
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      return (
+        <Box
+          sx={{
+            background: "rgba(15, 23, 42, 0.95)",
+            backdropFilter: "blur(10px)",
+            p: 2,
+            borderRadius: 2,
+            border: "1px solid rgba(59, 130, 246, 0.3)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+          }}
+        >
+          <Typography sx={{ color: "white", fontWeight: 600 }}>
+            {payload[0].name}
+          </Typography>
+          <Typography sx={{ color: "#3b82f6", fontSize: "1.2rem" }}>
+            {payload[0].value}
+          </Typography>
+        </Box>
+      );
     }
-    return g;
-  }, [issues]);
-
-  // chart data
-  const categoryData = useMemo(
-    () =>
-      catOrder.map((c) => ({
-        category: (catLabels[c] || c).toUpperCase(),
-        count: (grouped[c] || []).length,
-      })),
-    [grouped]
-  );
-
-  const severityData = useMemo(() => {
-    const counts = { critical: 0, high: 0, medium: 0, low: 0 };
-    for (const i of issues) {
-      const s = (i.severity || "low").toLowerCase();
-      if (counts[s] !== undefined) counts[s] += 1;
-    }
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
-  }, [issues]);
-
-  const donutColorByIndex = (idx) => donutColors[idx % donutColors.length];
+    return null;
+  };
 
   return (
-    <Box sx={{ p: 2 }}>
-      {/* Summary header */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={6} md={2.4}>
-          <StatCard title="Total Issues" value={summary.totalIssues ?? issues.length} accent="#60a5fa" />
-        </Grid>
-        <Grid item xs={6} md={2.4}>
-          <StatCard title="Critical" value={summary.critical ?? 0} accent={severityColors.critical} />
-        </Grid>
-        <Grid item xs={6} md={2.4}>
-          <StatCard title="High" value={summary.high ?? 0} accent={severityColors.high} />
-        </Grid>
-        <Grid item xs={6} md={2.4}>
-          <StatCard title="Medium" value={summary.medium ?? 0} accent={severityColors.medium} />
-        </Grid>
-        <Grid item xs={6} md={2.4}>
-          <StatCard title="Low" value={summary.low ?? 0} accent={severityColors.low} />
+    <Box
+      sx={{
+        background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+        minHeight: "100vh",
+        p: 3,
+      }}
+    >
+      <Grid container spacing={3}>
+        {/* Header Stats */}
+        <Grid item xs={12}>
+          <Grid container spacing={2}>
+            {[
+              {
+                label: "Quality Score",
+                value: summary.qualityScore || 0,
+                icon: "🎯",
+                gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              },
+              {
+                label: "Security Score",
+                value: summary.securityScore || 0,
+                icon: "🔒",
+                gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+              },
+              {
+                label: "Total Issues",
+                value:
+                  summary.critical +
+                  summary.high +
+                  summary.medium +
+                  summary.low,
+                icon: "⚡",
+                gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+              },
+              {
+                label: "Hotspot Score",
+                value: hotspotScore,
+                icon: "🔥",
+                gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+              },
+            ].map((stat, i) => (
+              <Grid item xs={12} sm={6} md={3} key={i}>
+                <Card
+                  sx={{
+                    background: stat.gradient,
+                    p: 3,
+                    borderRadius: 3,
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+                    transition: "transform 0.3s ease",
+                    "&:hover": {
+                      transform: "translateY(-5px)",
+                      boxShadow: "0 15px 40px rgba(0,0,0,0.4)",
+                    },
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Typography sx={{ fontSize: "2.5rem" }}>
+                      {stat.icon}
+                    </Typography>
+                    <Box>
+                      <Typography
+                        variant="h3"
+                        sx={{ color: "white", fontWeight: 700 }}
+                      >
+                        {stat.value}
+                      </Typography>
+                      <Typography
+                        sx={{ color: "rgba(255,255,255,0.9)", fontSize: "0.9rem" }}
+                      >
+                        {stat.label}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
         </Grid>
 
-        {/* Scores */}
+        {/* Radar Chart - Overall Metrics */}
         <Grid item xs={12} md={6}>
-          <ScoreCard title="Security Score" score={summary.securityScore ?? 0} color="#22c55e" />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <ScoreCard title="Quality Score" score={summary.qualityScore ?? 0} color="#a78bfa" />
-        </Grid>
-      </Grid>
-
-      {/* Charts */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} md={7}>
-          <Card sx={{ background: "#0f172a", color: "white", height: 280 }}>
-            <CardContent sx={{ height: "100%" }}>
-              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-                Issues by Category
-              </Typography>
-              <ResponsiveContainer width="100%" height="85%">
-                <BarChart data={categoryData}>
-                  <XAxis dataKey="category" tick={{ fill: "#93a3b8", fontSize: 12 }} />
-                  <YAxis allowDecimals={false} tick={{ fill: "#93a3b8", fontSize: 12 }} />
-                  <RTooltip
-                    contentStyle={{ background: "#111827", border: "1px solid #374151", color: "#fff" }}
+          <Card
+            sx={{
+              background: "rgba(15, 23, 42, 0.8)",
+              backdropFilter: "blur(10px)",
+              borderRadius: 3,
+              p: 3,
+              border: "1px solid rgba(59, 130, 246, 0.2)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                color: "white",
+                mb: 2,
+                fontWeight: 600,
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              📊 Overall Code Metrics
+            </Typography>
+            <Divider sx={{ borderColor: "rgba(59, 130, 246, 0.2)", mb: 2 }} />
+            <Box sx={{ height: 300 }}>
+              <ResponsiveContainer>
+                <RadarChart data={radarData}>
+                  <PolarGrid stroke="rgba(59, 130, 246, 0.3)" />
+                  <PolarAngleAxis
+                    dataKey="subject"
+                    tick={{ fill: "white", fontSize: 12 }}
                   />
-                  <Bar dataKey="count" fill="#60a5fa" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                  <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                  <Radar
+                    name="Score"
+                    dataKey="value"
+                    stroke="#3b82f6"
+                    fill="#3b82f6"
+                    fillOpacity={0.6}
+                  />
+                </RadarChart>
               </ResponsiveContainer>
-            </CardContent>
+            </Box>
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={5}>
-          <Card sx={{ background: "#0f172a", color: "white", height: 280 }}>
-            <CardContent sx={{ height: "100%" }}>
-              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-                Issues by Severity
-              </Typography>
-              <ResponsiveContainer width="100%" height="85%">
+        {/* Quality & Security Bar Chart */}
+        <Grid item xs={12} md={6}>
+          <Card
+            sx={{
+              background: "rgba(15, 23, 42, 0.8)",
+              backdropFilter: "blur(10px)",
+              borderRadius: 3,
+              p: 3,
+              border: "1px solid rgba(139, 92, 246, 0.2)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                color: "white",
+                mb: 2,
+                fontWeight: 600,
+                background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              🎯 Code Quality & Security
+            </Typography>
+            <Divider sx={{ borderColor: "rgba(139, 92, 246, 0.2)", mb: 2 }} />
+            <Box sx={{ height: 300 }}>
+              <ResponsiveContainer>
+                <BarChart data={scoreData}>
+                  <defs>
+                    <linearGradient id="colorQuality" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#667eea" stopOpacity={1} />
+                      <stop offset="100%" stopColor="#764ba2" stopOpacity={1} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="name" tick={{ fill: "white" }} />
+                  <YAxis tick={{ fill: "white" }} />
+                  <ReTooltip content={<CustomTooltip />} />
+                  <Bar
+                    dataKey="score"
+                    fill="url(#colorQuality)"
+                    radius={[10, 10, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </Box>
+          </Card>
+        </Grid>
+
+        {/* Performance Area Chart */}
+        <Grid item xs={12} md={6}>
+          <Card
+            sx={{
+              background: "rgba(15, 23, 42, 0.8)",
+              backdropFilter: "blur(10px)",
+              borderRadius: 3,
+              p: 3,
+              border: "1px solid rgba(34, 197, 94, 0.2)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                color: "white",
+                mb: 2,
+                fontWeight: 600,
+                background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              ⚡ Performance Metrics
+            </Typography>
+            <Divider sx={{ borderColor: "rgba(34, 197, 94, 0.2)", mb: 2 }} />
+            <Box sx={{ height: 300 }}>
+              <ResponsiveContainer>
+                <AreaChart data={timeData}>
+                  <defs>
+                    <linearGradient id="colorPerf" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#4facfe" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="#00f2fe" stopOpacity={0.2} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="name" tick={{ fill: "white" }} />
+                  <YAxis tick={{ fill: "white" }} />
+                  <ReTooltip content={<CustomTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="score"
+                    stroke="#4facfe"
+                    strokeWidth={3}
+                    fill="url(#colorPerf)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </Box>
+          </Card>
+        </Grid>
+
+        {/* Severity Pie Chart */}
+        <Grid item xs={12} md={6}>
+          <Card
+            sx={{
+              background: "rgba(15, 23, 42, 0.8)",
+              backdropFilter: "blur(10px)",
+              borderRadius: 3,
+              p: 3,
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                color: "white",
+                mb: 2,
+                fontWeight: 600,
+                background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              🎨 Severity Distribution
+            </Typography>
+            <Divider sx={{ borderColor: "rgba(239, 68, 68, 0.2)", mb: 2 }} />
+            <Box sx={{ height: 300 }}>
+              <ResponsiveContainer>
                 <PieChart>
                   <Pie
                     data={severityData}
-                    dataKey="value"
-                    nameKey="name"
                     innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={2}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                   >
                     {severityData.map((_, i) => (
-                      <Cell key={i} fill={donutColorByIndex(i)} />
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Legend />
-                  <RTooltip
-                    formatter={(v, n) => [v, n.toUpperCase()]}
-                    contentStyle={{ background: "#111827", border: "1px solid #374151", color: "#fff" }}
+                  <ReTooltip content={<CustomTooltip />} />
+                  <Legend
+                    wrapperStyle={{ color: "white" }}
+                    iconType="circle"
                   />
                 </PieChart>
               </ResponsiveContainer>
-            </CardContent>
+            </Box>
           </Card>
         </Grid>
-      </Grid>
 
-      {/* Category columns */}
-      <Grid container spacing={2}>
-        {catOrder.map((cat) => (
-          <Grid item xs={12} md={6} key={cat}>
-            <CategoryPanel cat={cat} items={grouped[cat]} raw={raw?.[cat]} />
-          </Grid>
-        ))}
+        {/* Hotspot Detection */}
+        <Grid item xs={12} md={6}>
+          <Card
+            sx={{
+              background: `linear-gradient(135deg, ${
+                hotspotLabel.includes("High")
+                  ? "#ef4444, #dc2626"
+                  : hotspotLabel.includes("Moderate")
+                  ? "#f97316, #ea580c"
+                  : "#22c55e, #16a34a"
+              })`,
+              borderRadius: 3,
+              p: 4,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+              position: "relative",
+              overflow: "hidden",
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background:
+                  "radial-gradient(circle at top right, rgba(255,255,255,0.1) 0%, transparent 60%)",
+              },
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                color: "white",
+                mb: 2,
+                fontWeight: 700,
+                textShadow: "0 2px 10px rgba(0,0,0,0.3)",
+                position: "relative",
+              }}
+            >
+              🔥 Hotspot Detection
+            </Typography>
+            <Divider sx={{ borderColor: "rgba(255,255,255,0.3)", mb: 3 }} />
+            <Box sx={{ textAlign: "center", position: "relative" }}>
+              <Typography
+                variant="h2"
+                sx={{
+                  color: "white",
+                  fontWeight: 800,
+                  mb: 2,
+                  textShadow: "0 4px 20px rgba(0,0,0,0.3)",
+                }}
+              >
+                {hotspotLabel}
+              </Typography>
+              <Typography
+                variant="h4"
+                sx={{
+                  color: "rgba(255,255,255,0.9)",
+                  fontWeight: 600,
+                  mb: 2,
+                }}
+              >
+                Score: {hotspotScore}
+              </Typography>
+              <Typography
+                sx={{
+                  color: "rgba(255,255,255,0.8)",
+                  fontSize: "0.9rem",
+                }}
+              >
+                Critical=4 • High=3 • Medium=2 • Low=1
+              </Typography>
+            </Box>
+          </Card>
+        </Grid>
+
+        {/* Issue Summary */}
+        <Grid item xs={12} md={6}>
+          <Card
+            sx={{
+              background: "rgba(15, 23, 42, 0.8)",
+              backdropFilter: "blur(10px)",
+              borderRadius: 3,
+              p: 3,
+              border: "1px solid rgba(234, 179, 8, 0.2)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                color: "white",
+                mb: 2,
+                fontWeight: 600,
+              }}
+            >
+              📋 Issue Breakdown
+            </Typography>
+            <Divider sx={{ borderColor: "rgba(234, 179, 8, 0.2)", mb: 3 }} />
+            <Grid container spacing={2}>
+              {[
+                { label: "Critical", value: summary.critical, color: "#ef4444" },
+                { label: "High", value: summary.high, color: "#f97316" },
+                { label: "Medium", value: summary.medium, color: "#eab308" },
+                { label: "Low", value: summary.low, color: "#22c55e" },
+              ].map((item, i) => (
+                <Grid item xs={6} key={i}>
+                  <Box
+                    sx={{
+                      background: `${item.color}20`,
+                      borderLeft: `4px solid ${item.color}`,
+                      p: 2,
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Typography
+                      sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.85rem" }}
+                    >
+                      {item.label}
+                    </Typography>
+                    <Typography
+                      variant="h4"
+                      sx={{ color: "white", fontWeight: 700 }}
+                    >
+                      {item.value}
+                    </Typography>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          </Card>
+        </Grid>
+
+        {/* Top Risk Areas */}
+        <Grid item xs={12}>
+          <Card
+            sx={{
+              background: "rgba(15, 23, 42, 0.8)",
+              backdropFilter: "blur(10px)",
+              borderRadius: 3,
+              p: 3,
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                color: "white",
+                mb: 2,
+                fontWeight: 600,
+                background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              🎯 Top 5 Risk Areas
+            </Typography>
+            <Divider sx={{ borderColor: "rgba(239, 68, 68, 0.2)", mb: 3 }} />
+            <Grid container spacing={2}>
+              {results.issues.slice(0, 5).map((issue, i) => (
+                <Grid item xs={12} key={i}>
+                  <Card
+                    sx={{
+                      background: `linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)`,
+                      p: 3,
+                      borderLeft: `4px solid ${
+                        issue.severity === "critical"
+                          ? "#ef4444"
+                          : issue.severity === "high"
+                          ? "#f97316"
+                          : issue.severity === "medium"
+                          ? "#eab308"
+                          : "#22c55e"
+                      }`,
+                      borderRadius: 2,
+                      transition: "transform 0.2s ease",
+                      "&:hover": {
+                        transform: "translateX(5px)",
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "start",
+                        mb: 1,
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ color: "white", fontWeight: 600, flex: 1 }}
+                      >
+                        {issue.message}
+                      </Typography>
+                      <Chip
+                        label={issue.severity.toUpperCase()}
+                        size="small"
+                        sx={{
+                          background:
+                            issue.severity === "critical"
+                              ? "#ef4444"
+                              : issue.severity === "high"
+                              ? "#f97316"
+                              : issue.severity === "medium"
+                              ? "#eab308"
+                              : "#22c55e",
+                          color: "white",
+                          fontWeight: 600,
+                          ml: 2,
+                        }}
+                      />
+                    </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "rgba(255,255,255,0.7)", mb: 0.5 }}
+                    >
+                      Type: <b>{issue.type.toUpperCase()}</b> • Line:{" "}
+                      <b>{issue.line}</b>
+                    </Typography>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Card>
+        </Grid>
       </Grid>
     </Box>
   );
