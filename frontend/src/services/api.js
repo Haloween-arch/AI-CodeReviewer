@@ -4,29 +4,38 @@ import axios from "axios";
 const API_BASE = "http://127.0.0.1:8000";
 
 export async function analyzeAll(code, language) {
-  const response = await axios.post(`${API_BASE}/analyze`, {
+  const res = await axios.post(`${API_BASE}/analyze`, {
     code,
     language
   });
 
-  const data = response.data.results || {};
-  const issues = [];
+  const data = res.data.results || {};
 
-  // ✅ Syntax
-  if (data.syntax?.errors) {
+  const issues = [];
+  const raw = {};
+
+  /* ✅ Store raw results for raw JSON view */
+  raw.syntax = data.syntax;
+  raw.style = data.style;
+  raw.security = data.security;
+  raw.quality = data.quality;
+  raw.rule = data.rule;
+
+  /* ✅ SYNTAX */
+  if (data.syntax?.errors?.length) {
     data.syntax.errors.forEach(err => {
       issues.push({
         severity: "high",
         type: "syntax",
-        line: err.line,
+        line: err.line || 0,
         message: err.message,
         suggestion: "Fix syntax error"
       });
     });
   }
 
-  // ✅ Style (local)
-  if (data.style?.local_issues) {
+  /* ✅ STYLE (Local Lint) */
+  if (data.style?.local_issues?.length) {
     data.style.local_issues.forEach(i => {
       issues.push({
         severity: i.severity || "low",
@@ -38,56 +47,71 @@ export async function analyzeAll(code, language) {
     });
   }
 
-  // ✅ Style (AI)
-  if (data.style?.ai_review?.issues) {
+  /* ✅ STYLE (AI Review) */
+  if (data.style?.ai_review?.issues?.length) {
     data.style.ai_review.issues.forEach(i => {
       issues.push({
-        severity: "low",
+        severity: "medium",
         type: "style",
         line: i.line || 0,
         message: i.message,
-        suggestion: i.suggestion || "Fix style issue"
+        suggestion: i.suggestion || "Improve code readability"
       });
     });
   }
 
-  // ✅ Security
-  if (data.security?.security_issues?.bandit?.results) {
+  /* ✅ SECURITY (Bandit Static Scan) */
+  if (data.security?.security_issues?.bandit?.results?.length) {
     data.security.security_issues.bandit.results.forEach(sec => {
       issues.push({
         severity: "high",
         type: "security",
-        line: sec.line_number,
+        line: sec.line_number || 0,
         message: sec.issue_text,
         suggestion: sec.issue_cwe || "Fix vulnerability"
       });
     });
   }
 
-  if (data.security?.ai?.issues) {
+  /* ✅ SECURITY (Gemini AI Review) */
+  if (data.security?.ai?.issues?.length) {
     data.security.ai.issues.forEach(sec => {
       issues.push({
         severity: sec.severity || "medium",
         type: "security",
-        line: sec.line,
+        line: sec.line || 0,
         message: sec.message,
         suggestion: sec.suggestion || "Fix security issue"
       });
     });
   }
 
-  // ✅ Quality
+  /* ✅ QUALITY ANALYSIS → Time/Space complexity */
   if (data.quality?.analysis) {
+    const a = data.quality.analysis;
     issues.push({
       severity: "medium",
       type: "quality",
       line: 0,
-      message: `Time complexity: ${data.quality.analysis.time_complexity}`,
+      message: `Time: ${a.time_complexity}, Space: ${a.space_complexity}`,
       suggestion: "Optimize algorithm"
     });
   }
 
-  // ✅ Summary → Scores
+  /* ✅ RULE ENGINE */
+  if (data.rule?.issues?.length) {
+    data.rule.issues.forEach(r => {
+      issues.push({
+        severity: r.severity || "low",
+        type: "rule",
+        line: r.line || 0,
+        message: r.message,
+        suggestion: r.suggestion || "Fix rule violation"
+      });
+    });
+  }
+
+  /* ✅ Summary & Scores */
   const summary = {
     totalIssues: issues.length,
     critical: issues.filter(i => i.severity === "critical").length,
@@ -95,8 +119,8 @@ export async function analyzeAll(code, language) {
     medium: issues.filter(i => i.severity === "medium").length,
     low: issues.filter(i => i.severity === "low").length,
     securityScore: 100 - issues.filter(i => i.type === "security").length * 10,
-    qualityScore: 100 - issues.length * 5,
+    qualityScore: 100 - issues.length * 5
   };
 
-  return { issues, summary };
+  return { issues, summary, raw };
 }

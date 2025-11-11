@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useState } from "react";
 import {
   ThemeProvider,
@@ -13,147 +14,160 @@ import {
   LinearProgress,
 } from "@mui/material";
 
-import {
-  Code as CodeIcon,
-  BugReport as BugIcon,
-  Assessment as AssessmentIcon,
-  Security as SecurityIcon,
-} from "@mui/icons-material";
+import SecurityIcon from "@mui/icons-material/Security";
+import BugIcon from "@mui/icons-material/BugReport";
+import CodeIcon from "@mui/icons-material/Code";
+import AssessmentIcon from "@mui/icons-material/Assessment";
+import UploadIcon from "@mui/icons-material/CloudUpload";
 
-import "./App.css";
+import Sidebar from "./components/Sidebar";
+import IssuesPanel from "./components/IssuesPanel";
+import InsightsPanel from "./components/InsightsPanel";
+import EditorPane from "./components/EditorPane";
 
-// Components
-import Sidebar from "./components/Sidebar.jsx";
-import EditorPane from "./components/EditorPane.jsx";
-import IssuesPanel from "./components/IssuesPanel.jsx";
-import ChartsPanel from "./components/ChartsPanel.jsx";
-import FileUpload from "./components/FileUpload.jsx";
-
-// ✅ REAL backend API call (not mock)
-import { analyzeAll } from "./services/api.js";
+import { analyzeAll } from "./services/api";
 
 export default function App() {
-  // ✅ Theme (Dark UI)
   const theme = createTheme({
     palette: {
       mode: "dark",
       primary: { main: "#3b82f6" },
       secondary: { main: "#8b5cf6" },
-      background: {
-        default: "#0f172a",
-        paper: "#1e293b",
-      },
+      background: { default: "#0f172a", paper: "#1e293b" },
+    },
+    typography: {
+      fontFamily: "Inter, sans-serif",
     },
   });
 
-  // ✅ Main state
   const [tab, setTab] = useState(0);
   const [code, setCode] = useState("// paste or upload code here");
   const [language, setLanguage] = useState("python");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // ✅ When file is uploaded
+  // ✅ Upload + auto-detect language
   const onUpload = (text, filename) => {
     setCode(text);
+
     const ext = filename.split(".").pop();
-    const map = {
+    const langMap = {
       js: "javascript",
-      jsx: "javascript",
       ts: "typescript",
-      tsx: "typescript",
       py: "python",
       java: "java",
       cpp: "cpp",
-      cxx: "cpp",
-      cc: "cpp",
+      c: "cpp",
       go: "go",
     };
-    setLanguage(map[ext] || "javascript");
+
+    setLanguage(langMap[ext] || "javascript");
   };
 
-  // ✅ Trigger full backend scan (via API Gateway)
+  // ✅ Trigger backend analysis
   const onReview = async () => {
     setLoading(true);
     try {
-      const response = await analyzeAll(code, language);
-      setResults(response);
-      setTab(1); // Switch to Results tab
-    } catch (err) {
-      console.error(err);
-      alert("Analysis failed — check console");
+      const res = await analyzeAll(code, language);
+      setResults(res);
+      setTab(1); // move to results tab
+    } catch (e) {
+      console.error("Review failed:", e);
+      alert("Analysis failed. Check backend logs.");
     }
     setLoading(false);
   };
+
+  // ✅ Hidden file input
+  const FileUpload = () => (
+    <>
+      <input
+        type="file"
+        id="file-upload"
+        style={{ display: "none" }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => onUpload(ev.target.result, file.name);
+          reader.readAsText(file);
+        }}
+        accept=".js,.ts,.py,.java,.cpp,.go,.jsx,.tsx"
+      />
+      <label htmlFor="file-upload">
+        <Button
+          component="span"
+          variant="outlined"
+          startIcon={<UploadIcon />}
+          sx={{ mr: 2 }}
+        >
+          Upload File
+        </Button>
+      </label>
+    </>
+  );
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
 
-      <Box className="app-container">
-
-        {/* ✅ Sidebar (Language Picker + Branding) */}
+      <Box className="app-container" sx={{ display: "flex", height: "100vh" }}>
+        {/* ✅ Sidebar */}
         <Sidebar language={language} onPickLang={setLanguage} />
 
-        {/* ✅ Main Window */}
-        <Box className="main-content">
-
-          {/* ✅ Top Bar */}
-          <AppBar position="static" className="app-header">
+        {/* ✅ Main Content */}
+        <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
+          <AppBar position="static" sx={{ background: "#1e293b" }}>
             <Toolbar>
-              <SecurityIcon className="header-icon" />
-              <Typography variant="h6" className="header-title">
+              <SecurityIcon sx={{ mr: 1 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 CodeSAGE AI — Dashboard
               </Typography>
 
               <Box sx={{ flex: 1 }} />
 
-              <FileUpload onUpload={onUpload} />
+              {/* ✅ Upload button */}
+              <FileUpload />
 
+              {/* ✅ Review button */}
               <Button
                 variant="contained"
                 onClick={onReview}
                 disabled={loading}
                 startIcon={<CodeIcon />}
-                className="review-button"
+                sx={{ borderRadius: 2, px: 3 }}
               >
                 {loading ? "Analyzing..." : "Review Code"}
               </Button>
             </Toolbar>
 
-            {/* ✅ Progress bar while scanning */}
-            {loading && <LinearProgress className="progress-bar" />}
+            {loading && <LinearProgress />}
           </AppBar>
 
           {/* ✅ Tabs */}
           <Tabs
             value={tab}
             onChange={(_, v) => setTab(v)}
-            className="tab-bar"
             variant="fullWidth"
+            sx={{
+              bgcolor: "#0f172a",
+              borderBottom: "1px solid #1e293b",
+            }}
           >
             <Tab label="Editor" icon={<CodeIcon />} />
             <Tab label="Results" icon={<BugIcon />} />
             <Tab label="Insights" icon={<AssessmentIcon />} />
           </Tabs>
 
-          {/* ✅ Main Content Area */}
-          <Box className="content-area">
-
-            {/* Editor */}
+          {/* ✅ Page Content */}
+          <Box sx={{ flexGrow: 1, p: 2, overflow: "auto" }}>
             {tab === 0 && (
-              <EditorPane
-                code={code}
-                language={language}
-                onChange={(v) => setCode(v)}
-              />
+              <EditorPane code={code} language={language} onChange={setCode} />
             )}
 
-            {/* Analysis Results */}
             {tab === 1 && <IssuesPanel results={results} />}
 
-            {/* Charts */}
-            {tab === 2 && <ChartsPanel results={results} />}
+            {tab === 2 && <InsightsPanel results={results} />}
           </Box>
         </Box>
       </Box>
