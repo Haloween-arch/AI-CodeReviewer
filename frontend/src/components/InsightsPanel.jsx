@@ -1,4 +1,5 @@
-import React from "react";
+// src/components/InsightsPanel.jsx
+import React, { useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -7,665 +8,363 @@ import {
   Box,
   Divider,
   Chip,
+  Stack,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
-
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip as ReTooltip,
   ResponsiveContainer,
   BarChart,
   Bar,
+  XAxis,
+  YAxis,
+  Tooltip as ReTooltip,
+  Legend,
   PieChart,
   Pie,
   Cell,
-  Legend,
+  AreaChart,
+  Area,
+  CartesianGrid,
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  Area,
-  AreaChart,
+  LineChart,
+  Line,
 } from "recharts";
 
 const COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e"];
-const GRADIENT_COLORS = {
-  primary: ["#3b82f6", "#8b5cf6"],
-  success: ["#22c55e", "#10b981"],
-  warning: ["#f59e0b", "#ef4444"],
-};
+const GRADIENT_PRIMARY = ["#6366f1", "#8b5cf6"]; // purple-blue
+const GRADIENT_SEC = ["#06b6d4", "#3b82f6"]; // cyan-blue
+
+function SmallStat({ title, value, hint, bg }) {
+  return (
+    <Card sx={{ p: 2, background: bg, color: "white", borderRadius: 2 }}>
+      <Box display="flex" alignItems="center" justifyContent="space-between">
+        <Box>
+          <Typography variant="caption" sx={{ opacity: 0.9 }}>
+            {title}
+          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            {value}
+          </Typography>
+        </Box>
+        {hint && (
+          <Tooltip title={hint}>
+            <IconButton size="small" sx={{ color: "rgba(255,255,255,0.9)" }}>
+              <InfoOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Box>
+    </Card>
+  );
+}
+
+function CustomTooltip({ active, payload }) {
+  if (!active || !payload || !payload.length) return null;
+  const p = payload[0];
+  return (
+    <Box
+      sx={{
+        background: "rgba(2,6,23,0.9)",
+        color: "white",
+        p: 1.25,
+        borderRadius: 1,
+        border: "1px solid rgba(255,255,255,0.06)",
+      }}
+    >
+      <Typography variant="subtitle2">{p.name || p.payload.name}</Typography>
+      <Typography variant="h6" sx={{ mt: 0.5 }}>
+        {p.value}
+      </Typography>
+    </Box>
+  );
+}
 
 export default function InsightsPanel({ results }) {
+  // If results absent, show nice empty state
   if (!results || !results.summary) {
     return (
       <Box
         sx={{
           p: 6,
-          textAlign: "center",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          borderRadius: 3,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <Typography
-          variant="h5"
-          sx={{
-            color: "white",
-            fontWeight: 600,
-            mb: 1,
-            textShadow: "0 2px 10px rgba(0,0,0,0.2)",
-          }}
-        >
-          ✨ Awaiting Analysis
-        </Typography>
-        <Typography sx={{ color: "rgba(255,255,255,0.8)" }}>
-          Insights will appear here after running <b>Review Code</b>
-        </Typography>
+        <Card sx={{ p: 6, borderRadius: 3, width: "100%", textAlign: "center" }}>
+          <Typography variant="h5" sx={{ mb: 1 }}>
+            Ready for insights ✨
+          </Typography>
+          <Typography color="text.secondary">
+            Run the analysis to populate quality, security, performance and hotspots.
+          </Typography>
+        </Card>
       </Box>
     );
   }
 
   const summary = results.summary;
+  const issues = results.issues || [];
 
-  // Score Data for Graphs
+  // Prepare data collections for charts
   const scoreData = [
-    { name: "Quality", score: summary.qualityScore || 0 },
-    { name: "Security", score: summary.securityScore || 0 },
+    { name: "Quality", score: summary.qualityScore ?? 0 },
+    { name: "Security", score: summary.securityScore ?? 0 },
+    { name: "Performance", score: summary.performanceScore ?? 0 },
   ];
 
-  // Time Complexity Insights
-  const timeData = [
-    {
-      name: "Time Complexity",
-      score: summary.timeComplexityScore || 40,
-    },
-    {
-      name: "Space Efficiency",
-      score: summary.spaceComplexityScore || 60,
-    },
-  ];
-
-  // Radar Chart Data
-  const radarData = [
-    {
-      subject: "Quality",
-      value: summary.qualityScore || 0,
-      fullMark: 100,
-    },
-    {
-      subject: "Security",
-      value: summary.securityScore || 0,
-      fullMark: 100,
-    },
-    {
-      subject: "Performance",
-      value: summary.timeComplexityScore || 40,
-      fullMark: 100,
-    },
-    {
-      subject: "Efficiency",
-      value: summary.spaceComplexityScore || 60,
-      fullMark: 100,
-    },
-    {
-      subject: "Maintainability",
-      value: 75,
-      fullMark: 100,
-    },
-  ];
-
-  // Severity Distribution Pie Chart
   const severityData = [
-    { name: "Critical", value: summary.critical },
-    { name: "High", value: summary.high },
-    { name: "Medium", value: summary.medium },
-    { name: "Low", value: summary.low },
+    { name: "Critical", value: summary.critical ?? 0 },
+    { name: "High", value: summary.high ?? 0 },
+    { name: "Medium", value: summary.medium ?? 0 },
+    { name: "Low", value: summary.low ?? 0 },
   ];
 
-  // Hotspot detection
+  const perfTimeSeries =
+    (summary.timeSeries && summary.timeSeries.slice(-12)) || [
+      { name: "t-11", score: 30 },
+      { name: "t-10", score: 40 },
+      { name: "t-9", score: 55 },
+      { name: "t-8", score: 60 },
+      { name: "t-7", score: 65 },
+      { name: "t-6", score: 70 },
+      { name: "t-5", score: 72 },
+      { name: "t-4", score: 68 },
+      { name: "t-3", score: 74 },
+      { name: "t-2", score: 78 },
+      { name: "t-1", score: 80 },
+      { name: "now", score: summary.qualityScore ?? 80 },
+    ];
+
+  const topFiles = (summary.topRiskFiles || []).slice(0, 6);
+  // fallback creation if missing
+  const issuesByFile = useMemo(() => {
+    if (topFiles.length) return topFiles.map((f) => ({ file: f.name, score: f.score, issues: f.count }));
+    // derive top files from issues list if summary.topRiskFiles missing
+    const map = {};
+    issues.forEach((it) => {
+      const file = it.file || "unknown";
+      map[file] = map[file] || { file, score: 0, issues: 0 };
+      map[file].issues += 1;
+      // boost score by severity
+      const boost = it.severity === "critical" ? 4 : it.severity === "high" ? 3 : it.severity === "medium" ? 2 : 1;
+      map[file].score += boost;
+    });
+    return Object.values(map).sort((a, b) => b.score - a.score).slice(0, 6);
+  }, [issues, topFiles]);
+
+  // Time complexity breakdown (simple histogram)
+  const complexityBuckets = (summary.timeComplexityBreakdown || [
+    { label: "O(1)", count: 2 },
+    { label: "O(log n)", count: 1 },
+    { label: "O(n)", count: 6 },
+    { label: "O(n log n)", count: 3 },
+    { label: "O(n^2)", count: 1 },
+  ]).map((it, i) => ({ ...it, color: COLORS[i % COLORS.length] }));
+
+  // hotspot score and label
   const hotspotScore =
-    summary.critical * 4 +
-    summary.high * 3 +
-    summary.medium * 2 +
-    summary.low * 1;
-
+    (summary.critical ?? 0) * 4 + (summary.high ?? 0) * 3 + (summary.medium ?? 0) * 2 + (summary.low ?? 0);
   const hotspotLabel =
-    hotspotScore >= 12
-      ? "🔥 High Risk"
-      : hotspotScore >= 6
-      ? "⚠ Moderate Risk"
-      : "✅ Safe Zone";
-
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <Box
-          sx={{
-            background: "rgba(15, 23, 42, 0.95)",
-            backdropFilter: "blur(10px)",
-            p: 2,
-            borderRadius: 2,
-            border: "1px solid rgba(59, 130, 246, 0.3)",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
-          }}
-        >
-          <Typography sx={{ color: "white", fontWeight: 600 }}>
-            {payload[0].name}
-          </Typography>
-          <Typography sx={{ color: "#3b82f6", fontSize: "1.2rem" }}>
-            {payload[0].value}
-          </Typography>
-        </Box>
-      );
-    }
-    return null;
-  };
+    hotspotScore >= 12 ? "High risk" : hotspotScore >= 6 ? "Moderate risk" : "Low risk";
 
   return (
-    <Box
-      sx={{
-        background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-        minHeight: "100vh",
-        p: 3,
-      }}
-    >
+    <Box sx={{ p: 3, minHeight: "100vh", background: "transparent" }}>
       <Grid container spacing={3}>
-        {/* Header Stats */}
+        {/* Top small stats */}
         <Grid item xs={12}>
           <Grid container spacing={2}>
-            {[
-              {
-                label: "Quality Score",
-                value: summary.qualityScore || 0,
-                icon: "🎯",
-                gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              },
-              {
-                label: "Security Score",
-                value: summary.securityScore || 0,
-                icon: "🔒",
-                gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-              },
-              {
-                label: "Total Issues",
-                value:
-                  summary.critical +
-                  summary.high +
-                  summary.medium +
-                  summary.low,
-                icon: "⚡",
-                gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-              },
-              {
-                label: "Hotspot Score",
-                value: hotspotScore,
-                icon: "🔥",
-                gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-              },
-            ].map((stat, i) => (
-              <Grid item xs={12} sm={6} md={3} key={i}>
-                <Card
-                  sx={{
-                    background: stat.gradient,
-                    p: 3,
-                    borderRadius: 3,
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-                    transition: "transform 0.3s ease",
-                    "&:hover": {
-                      transform: "translateY(-5px)",
-                      boxShadow: "0 15px 40px rgba(0,0,0,0.4)",
-                    },
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Typography sx={{ fontSize: "2.5rem" }}>
-                      {stat.icon}
-                    </Typography>
-                    <Box>
-                      <Typography
-                        variant="h3"
-                        sx={{ color: "white", fontWeight: 700 }}
-                      >
-                        {stat.value}
-                      </Typography>
-                      <Typography
-                        sx={{ color: "rgba(255,255,255,0.9)", fontSize: "0.9rem" }}
-                      >
-                        {stat.label}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Card>
-              </Grid>
-            ))}
+            <Grid item xs={12} md={3}>
+              <SmallStat
+                title="Quality Score"
+                value={summary.qualityScore ?? 0}
+                hint="Overall code quality aggregated from style, complexity and tests"
+                bg={`linear-gradient(135deg, ${GRADIENT_PRIMARY[0]}, ${GRADIENT_PRIMARY[1]})`}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <SmallStat
+                title="Security Score"
+                value={summary.securityScore ?? 0}
+                hint="Computed from static analysis + AI findings"
+                bg={`linear-gradient(135deg, ${GRADIENT_SEC[0]}, ${GRADIENT_SEC[1]})`}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <SmallStat
+                title="Hotspot"
+                value={hotspotLabel}
+                hint="Weighted risk based on severity counts"
+                bg="#0ea5a4"
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <SmallStat
+                title="Total Issues"
+                value={(summary.critical ?? 0) + (summary.high ?? 0) + (summary.medium ?? 0) + (summary.low ?? 0)}
+                hint="Sum of all detected issues"
+                bg="#334155"
+              />
+            </Grid>
           </Grid>
         </Grid>
 
-        {/* Radar Chart - Overall Metrics */}
+        {/* Charts row */}
         <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              background: "rgba(15, 23, 42, 0.8)",
-              backdropFilter: "blur(10px)",
-              borderRadius: 3,
-              p: 3,
-              border: "1px solid rgba(59, 130, 246, 0.2)",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                color: "white",
-                mb: 2,
-                fontWeight: 600,
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              📊 Overall Code Metrics
+          <Card sx={{ p: 2, height: 420 }}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
+              Quality & Security Overview
             </Typography>
-            <Divider sx={{ borderColor: "rgba(59, 130, 246, 0.2)", mb: 2 }} />
-            <Box sx={{ height: 300 }}>
+            <Divider sx={{ mb: 2 }} />
+            <Box sx={{ height: 320 }}>
               <ResponsiveContainer>
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="rgba(59, 130, 246, 0.3)" />
-                  <PolarAngleAxis
-                    dataKey="subject"
-                    tick={{ fill: "white", fontSize: 12 }}
-                  />
-                  <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                  <Radar
-                    name="Score"
-                    dataKey="value"
-                    stroke="#3b82f6"
-                    fill="#3b82f6"
-                    fillOpacity={0.6}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            </Box>
-          </Card>
-        </Grid>
-
-        {/* Quality & Security Bar Chart */}
-        <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              background: "rgba(15, 23, 42, 0.8)",
-              backdropFilter: "blur(10px)",
-              borderRadius: 3,
-              p: 3,
-              border: "1px solid rgba(139, 92, 246, 0.2)",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                color: "white",
-                mb: 2,
-                fontWeight: 600,
-                background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              🎯 Code Quality & Security
-            </Typography>
-            <Divider sx={{ borderColor: "rgba(139, 92, 246, 0.2)", mb: 2 }} />
-            <Box sx={{ height: 300 }}>
-              <ResponsiveContainer>
-                <BarChart data={scoreData}>
+                <BarChart data={scoreData} margin={{ left: 10, right: 10 }}>
                   <defs>
-                    <linearGradient id="colorQuality" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#667eea" stopOpacity={1} />
-                      <stop offset="100%" stopColor="#764ba2" stopOpacity={1} />
+                    <linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor={GRADIENT_PRIMARY[0]} stopOpacity={1} />
+                      <stop offset="100%" stopColor={GRADIENT_PRIMARY[1]} stopOpacity={1} />
+                    </linearGradient>
+                    <linearGradient id="g2" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor={GRADIENT_SEC[0]} stopOpacity={1} />
+                      <stop offset="100%" stopColor={GRADIENT_SEC[1]} stopOpacity={1} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="name" tick={{ fill: "white" }} />
-                  <YAxis tick={{ fill: "white" }} />
+                  <XAxis dataKey="name" tick={{ fill: "#cbd5e1" }} />
+                  <YAxis tick={{ fill: "#cbd5e1" }} domain={[0, 100]} />
                   <ReTooltip content={<CustomTooltip />} />
-                  <Bar
-                    dataKey="score"
-                    fill="url(#colorQuality)"
-                    radius={[10, 10, 0, 0]}
-                  />
+                  <Legend wrapperStyle={{ color: "#cbd5e1" }} />
+                  <Bar dataKey="score" fill="url(#g1)" radius={[8, 8, 0, 0]} barSize={36} />
                 </BarChart>
               </ResponsiveContainer>
             </Box>
           </Card>
         </Grid>
 
-        {/* Performance Area Chart */}
         <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              background: "rgba(15, 23, 42, 0.8)",
-              backdropFilter: "blur(10px)",
-              borderRadius: 3,
-              p: 3,
-              border: "1px solid rgba(34, 197, 94, 0.2)",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                color: "white",
-                mb: 2,
-                fontWeight: 600,
-                background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              ⚡ Performance Metrics
+          <Card sx={{ p: 2, height: 420 }}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
+              Severity Distribution
             </Typography>
-            <Divider sx={{ borderColor: "rgba(34, 197, 94, 0.2)", mb: 2 }} />
-            <Box sx={{ height: 300 }}>
-              <ResponsiveContainer>
-                <AreaChart data={timeData}>
-                  <defs>
-                    <linearGradient id="colorPerf" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#4facfe" stopOpacity={0.8} />
-                      <stop offset="100%" stopColor="#00f2fe" stopOpacity={0.2} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="name" tick={{ fill: "white" }} />
-                  <YAxis tick={{ fill: "white" }} />
-                  <ReTooltip content={<CustomTooltip />} />
-                  <Area
-                    type="monotone"
-                    dataKey="score"
-                    stroke="#4facfe"
-                    strokeWidth={3}
-                    fill="url(#colorPerf)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </Box>
-          </Card>
-        </Grid>
-
-        {/* Severity Pie Chart */}
-        <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              background: "rgba(15, 23, 42, 0.8)",
-              backdropFilter: "blur(10px)",
-              borderRadius: 3,
-              p: 3,
-              border: "1px solid rgba(239, 68, 68, 0.2)",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                color: "white",
-                mb: 2,
-                fontWeight: 600,
-                background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              🎨 Severity Distribution
-            </Typography>
-            <Divider sx={{ borderColor: "rgba(239, 68, 68, 0.2)", mb: 2 }} />
-            <Box sx={{ height: 300 }}>
+            <Divider sx={{ mb: 2 }} />
+            <Box sx={{ height: 320, display: "flex", alignItems: "center" }}>
               <ResponsiveContainer>
                 <PieChart>
                   <Pie
                     data={severityData}
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
                     dataKey="value"
-                    label={({ name, percent }) =>
-                      `${name}: ${(percent * 100).toFixed(0)}%`
-                    }
+                    nameKey="name"
+                    innerRadius={62}
+                    outerRadius={110}
+                    paddingAngle={6}
+                    label={(entry) => `${entry.name} (${entry.value})`}
                   >
-                    {severityData.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    {severityData.map((entry, i) => (
+                      <Cell key={`c-${i}`} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Pie>
                   <ReTooltip content={<CustomTooltip />} />
-                  <Legend
-                    wrapperStyle={{ color: "white" }}
-                    iconType="circle"
-                  />
                 </PieChart>
               </ResponsiveContainer>
             </Box>
           </Card>
         </Grid>
 
-        {/* Hotspot Detection */}
-        <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              background: `linear-gradient(135deg, ${
-                hotspotLabel.includes("High")
-                  ? "#ef4444, #dc2626"
-                  : hotspotLabel.includes("Moderate")
-                  ? "#f97316, #ea580c"
-                  : "#22c55e, #16a34a"
-              })`,
-              borderRadius: 3,
-              p: 4,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
-              position: "relative",
-              overflow: "hidden",
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background:
-                  "radial-gradient(circle at top right, rgba(255,255,255,0.1) 0%, transparent 60%)",
-              },
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                color: "white",
-                mb: 2,
-                fontWeight: 700,
-                textShadow: "0 2px 10px rgba(0,0,0,0.3)",
-                position: "relative",
-              }}
-            >
-              🔥 Hotspot Detection
+        {/* Performance time series */}
+        <Grid item xs={12} md={8}>
+          <Card sx={{ p: 2, height: 360 }}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
+              Performance Trend (last runs)
             </Typography>
-            <Divider sx={{ borderColor: "rgba(255,255,255,0.3)", mb: 3 }} />
-            <Box sx={{ textAlign: "center", position: "relative" }}>
-              <Typography
-                variant="h2"
-                sx={{
-                  color: "white",
-                  fontWeight: 800,
-                  mb: 2,
-                  textShadow: "0 4px 20px rgba(0,0,0,0.3)",
-                }}
-              >
-                {hotspotLabel}
-              </Typography>
-              <Typography
-                variant="h4"
-                sx={{
-                  color: "rgba(255,255,255,0.9)",
-                  fontWeight: 600,
-                  mb: 2,
-                }}
-              >
-                Score: {hotspotScore}
-              </Typography>
-              <Typography
-                sx={{
-                  color: "rgba(255,255,255,0.8)",
-                  fontSize: "0.9rem",
-                }}
-              >
-                Critical=4 • High=3 • Medium=2 • Low=1
-              </Typography>
+            <Divider sx={{ mb: 2 }} />
+            <Box sx={{ height: 280 }}>
+              <ResponsiveContainer>
+                <AreaChart data={perfTimeSeries} margin={{ left: 0, right: 10 }}>
+                  <defs>
+                    <linearGradient id="perfGrad" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#60a5fa" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="#60a5fa" stopOpacity={0.12} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="name" tick={{ fill: "#cbd5e1" }} />
+                  <YAxis tick={{ fill: "#cbd5e1" }} domain={[0, 100]} />
+                  <CartesianGrid opacity={0.06} />
+                  <ReTooltip content={<CustomTooltip />} />
+                  <Area type="monotone" dataKey="score" stroke="#60a5fa" fill="url(#perfGrad)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
             </Box>
           </Card>
         </Grid>
 
-        {/* Issue Summary */}
-        <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              background: "rgba(15, 23, 42, 0.8)",
-              backdropFilter: "blur(10px)",
-              borderRadius: 3,
-              p: 3,
-              border: "1px solid rgba(234, 179, 8, 0.2)",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                color: "white",
-                mb: 2,
-                fontWeight: 600,
-              }}
-            >
-              📋 Issue Breakdown
+        {/* Complexity + Top Files */}
+        <Grid item xs={12} md={4}>
+          <Card sx={{ p: 2, height: 360 }}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
+              Time Complexity Breakdown
             </Typography>
-            <Divider sx={{ borderColor: "rgba(234, 179, 8, 0.2)", mb: 3 }} />
-            <Grid container spacing={2}>
-              {[
-                { label: "Critical", value: summary.critical, color: "#ef4444" },
-                { label: "High", value: summary.high, color: "#f97316" },
-                { label: "Medium", value: summary.medium, color: "#eab308" },
-                { label: "Low", value: summary.low, color: "#22c55e" },
-              ].map((item, i) => (
-                <Grid item xs={6} key={i}>
-                  <Box
-                    sx={{
-                      background: `${item.color}20`,
-                      borderLeft: `4px solid ${item.color}`,
-                      p: 2,
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Typography
-                      sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.85rem" }}
-                    >
-                      {item.label}
-                    </Typography>
-                    <Typography
-                      variant="h4"
-                      sx={{ color: "white", fontWeight: 700 }}
-                    >
-                      {item.value}
-                    </Typography>
+            <Divider sx={{ mb: 2 }} />
+            <Box sx={{ height: 220 }}>
+              <ResponsiveContainer>
+                <BarChart data={complexityBuckets} layout="vertical" margin={{ left: 10 }}>
+                  <XAxis type="number" tick={{ fill: "#cbd5e1" }} />
+                  <YAxis type="category" dataKey="label" tick={{ fill: "#cbd5e1" }} width={120} />
+                  <ReTooltip content={<CustomTooltip />} />
+                  <Bar dataKey="count" isAnimationActive barSize={14}>
+                    {complexityBuckets.map((entry, idx) => (
+                      <Cell key={`cb-${idx}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </Box>
+
+            <Divider sx={{ mt: 1, mb: 1 }} />
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              Top Risk Files
+            </Typography>
+
+            <Stack spacing={1}>
+              {issuesByFile.length === 0 ? (
+                <Typography color="text.secondary">No risky files detected.</Typography>
+              ) : (
+                issuesByFile.map((f, i) => (
+                  <Box key={i} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box>
+                      <Typography sx={{ fontWeight: 700 }}>{f.file}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        issues: {f.issues} — risk: {f.score}
+                      </Typography>
+                    </Box>
+                    <Chip label={`#${i + 1}`} size="small" color={i === 0 ? "error" : "default"} />
                   </Box>
-                </Grid>
-              ))}
-            </Grid>
+                ))
+              )}
+            </Stack>
           </Card>
         </Grid>
 
-        {/* Top Risk Areas */}
+        {/* Top risk list (detailed) */}
         <Grid item xs={12}>
-          <Card
-            sx={{
-              background: "rgba(15, 23, 42, 0.8)",
-              backdropFilter: "blur(10px)",
-              borderRadius: 3,
-              p: 3,
-              border: "1px solid rgba(239, 68, 68, 0.2)",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                color: "white",
-                mb: 2,
-                fontWeight: 600,
-                background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              🎯 Top 5 Risk Areas
+          <Card sx={{ p: 2 }}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
+              Top Risk Issues (preview)
             </Typography>
-            <Divider sx={{ borderColor: "rgba(239, 68, 68, 0.2)", mb: 3 }} />
+            <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
-              {results.issues.slice(0, 5).map((issue, i) => (
-                <Grid item xs={12} key={i}>
-                  <Card
-                    sx={{
-                      background: `linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)`,
-                      p: 3,
-                      borderLeft: `4px solid ${
-                        issue.severity === "critical"
-                          ? "#ef4444"
-                          : issue.severity === "high"
-                          ? "#f97316"
-                          : issue.severity === "medium"
-                          ? "#eab308"
-                          : "#22c55e"
-                      }`,
-                      borderRadius: 2,
-                      transition: "transform 0.2s ease",
-                      "&:hover": {
-                        transform: "translateX(5px)",
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "start",
-                        mb: 1,
-                      }}
-                    >
-                      <Typography
-                        variant="subtitle1"
-                        sx={{ color: "white", fontWeight: 600, flex: 1 }}
-                      >
-                        {issue.message}
-                      </Typography>
-                      <Chip
-                        label={issue.severity.toUpperCase()}
-                        size="small"
-                        sx={{
-                          background:
-                            issue.severity === "critical"
-                              ? "#ef4444"
-                              : issue.severity === "high"
-                              ? "#f97316"
-                              : issue.severity === "medium"
-                              ? "#eab308"
-                              : "#22c55e",
-                          color: "white",
-                          fontWeight: 600,
-                          ml: 2,
-                        }}
-                      />
-                    </Box>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "rgba(255,255,255,0.7)", mb: 0.5 }}
-                    >
-                      Type: <b>{issue.type.toUpperCase()}</b> • Line:{" "}
-                      <b>{issue.line}</b>
+              {(results.issues || []).slice(0, 6).map((it, idx) => (
+                <Grid item xs={12} md={4} key={idx}>
+                  <Card sx={{ p: 2, background: "#0b1220" }}>
+                    <Typography sx={{ fontWeight: 700 }}>{it.message}</Typography>
+                    <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+                      {it.type.toUpperCase()} • {it.severity.toUpperCase()} • Line {it.line || "-"}
                     </Typography>
+                    <Typography sx={{ mt: 1 }}>{it.suggestion || "No suggestion provided."}</Typography>
                   </Card>
                 </Grid>
               ))}
