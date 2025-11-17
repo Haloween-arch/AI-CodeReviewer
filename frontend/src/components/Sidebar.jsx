@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Box,
   Paper,
@@ -10,7 +10,8 @@ import {
   Typography,
   Chip,
   Stack,
-  Tooltip
+  Tooltip,
+  IconButton
 } from '@mui/material'
 import CodeRoundedIcon from '@mui/icons-material/CodeRounded'
 import CoffeeRoundedIcon from '@mui/icons-material/CoffeeRounded'
@@ -18,6 +19,8 @@ import IntegrationInstructionsRoundedIcon from '@mui/icons-material/IntegrationI
 import DataObjectRoundedIcon from '@mui/icons-material/DataObjectRounded'
 import TerminalRoundedIcon from '@mui/icons-material/TerminalRounded'
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
+import MenuOpenRoundedIcon from '@mui/icons-material/MenuOpenRounded'
+import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
 
 const LANGS = [
   { id: 'python', label: 'Python', icon: <TerminalRoundedIcon fontSize="small" /> },
@@ -36,116 +39,153 @@ const SERVICES = [
 ]
 
 export default function Sidebar({ language, onPickLang }) {
+  const [isOpen, setIsOpen] = useState(true)
+
+  const sidebarWidth = isOpen ? 250 : 56 
+
+  const handleToggle = () => {
+    setIsOpen(prev => !prev)
+  }
+
   return (
     <Paper
       elevation={0}
       sx={{
+        width: sidebarWidth,
+        transition: 'width 0.3s ease-in-out',
+        minWidth: sidebarWidth,
         height: '100%',
         borderRight: 1,
         borderColor: 'divider',
         bgcolor: 'background.paper',
         position: 'sticky',
         top: 0,
-        p: 2
+        p: 1.5,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: isOpen ? 'stretch' : 'center',
       }}
     >
-      {/* Header */}
+      {/* Collapse Button */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
-          gap: 1,
-          mb: 1.5
+          justifyContent: isOpen ? 'flex-end' : 'center',
+          mb: isOpen ? 1.5 : 0,
+          minHeight: 40
         }}
       >
-        <CodeRoundedIcon sx={{ opacity: 0.8 }} />
-        <Typography variant="overline" sx={{ letterSpacing: 1, opacity: 0.8 }}>
-          Language
-        </Typography>
+        <Tooltip title={isOpen ? 'Collapse Sidebar' : 'Expand Sidebar'}>
+          <IconButton onClick={handleToggle} size="small" sx={{ color: 'text.secondary' }}>
+            {isOpen ? <MenuOpenRoundedIcon /> : <MenuRoundedIcon />}
+          </IconButton>
+        </Tooltip>
       </Box>
 
-      {/* Languages */}
-      <List dense disablePadding aria-label="Choose a programming language">
-        {LANGS.map(l => (
-          <ListItemButton
-            key={l.id}
-            selected={l.id === language}
-            onClick={() => onPickLang && onPickLang(l.id)}
+      {/* Conditional Rendering of ALL Content */}
+      {isOpen && (
+        <Box sx={{ flexGrow: 1 }}>
+          {/* Header */}
+          <Box
             sx={{
-              borderRadius: 1.5,
-              mb: 0.5,
-              '&.Mui-selected': {
-                bgcolor: theme => (theme.palette.mode === 'light' ? 'action.selected' : 'action.selected'),
-              }
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 32 }}>{l.icon}</ListItemIcon>
-            <ListItemText
-              primary={l.label}
-              primaryTypographyProps={{ fontSize: 14, fontWeight: 600 }}
-              secondary={l.id}
-              secondaryTypographyProps={{ fontSize: 11, opacity: 0.6 }}
-            />
-          </ListItemButton>
-        ))}
-      </List>
-
-      <Divider sx={{ my: 2 }} />
-
-      {/* Services Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-        <CheckCircleRoundedIcon sx={{ opacity: 0.8 }} />
-        <Typography variant="overline" sx={{ letterSpacing: 1, opacity: 0.8 }}>
-          Services
-        </Typography>
-      </Box>
-
-      {/* Services Grid */}
-      <Stack spacing={1}>
-        {SERVICES.map(svc => (
-          <Paper
-            key={svc.name}
-            variant="outlined"
-            sx={{
-              p: 1,
-              borderRadius: 2,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 1
+              gap: 1,
+              mb: 1.5
             }}
           >
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              {svc.name}
+            <CodeRoundedIcon sx={{ opacity: 0.8 }} />
+            <Typography variant="overline" sx={{ letterSpacing: 1, opacity: 0.8 }}>
+              Language
             </Typography>
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <Tooltip title="Local analysis">
-                <Chip
-                  size="small"
-                  label="Local"
-                  variant={svc.local ? 'filled' : 'outlined'}
-                  color={svc.local ? 'success' : 'default'}
-                />
-              </Tooltip>
-              <Tooltip title="AI-powered analysis">
-                <Chip
-                  size="small"
-                  label="AI"
-                  variant={svc.ai ? 'filled' : 'outlined'}
-                  color={svc.ai ? 'info' : 'default'}
-                />
-              </Tooltip>
-            </Box>
-          </Paper>
-        ))}
-      </Stack>
+          </Box>
 
-      {/* Footer hint */}
-      <Box sx={{ mt: 2.5, px: 1, py: 1, bgcolor: 'action.hover', borderRadius: 2 }}>
-        <Typography variant="caption" sx={{ display: 'block', opacity: 0.8 }}>
-          Tip: You can switch languages anytime. Your last choice stays selected.
-        </Typography>
-      </Box>
+          {/* Languages */}
+          <List dense disablePadding aria-label="Choose a programming language">
+            {LANGS.map(l => (
+              <ListItemButton
+                key={l.id}
+                selected={l.id === language}
+                onClick={() => onPickLang && onPickLang(l.id)}
+                sx={{
+                  borderRadius: 1.5,
+                  mb: 0.5,
+                  '&.Mui-selected': {
+                    bgcolor: theme => (theme.palette.mode === 'light' ? 'action.selected' : 'action.selected'),
+                  }
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 32 }}>{l.icon}</ListItemIcon>
+                <ListItemText
+                  primary={l.label}
+                  primaryTypographyProps={{ fontSize: 14, fontWeight: 600 }}
+                  secondary={l.id}
+                  secondaryTypographyProps={{ fontSize: 11, opacity: 0.6 }}
+                />
+              </ListItemButton>
+            ))}
+          </List>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Services Header */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <CheckCircleRoundedIcon sx={{ opacity: 0.8 }} />
+            <Typography variant="overline" sx={{ letterSpacing: 1, opacity: 0.8 }}>
+              Services
+            </Typography>
+          </Box>
+
+          {/* Services Grid */}
+          <Stack spacing={1}>
+            {SERVICES.map(svc => (
+              <Paper
+                key={svc.name}
+                variant="outlined"
+                sx={{
+                  p: 1,
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {svc.name}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  <Tooltip title="Local analysis">
+                    <Chip
+                      size="small"
+                      label="Local"
+                      variant={svc.local ? 'filled' : 'outlined'}
+                      color={svc.local ? 'success' : 'default'}
+                    />
+                  </Tooltip>
+                  <Tooltip title="AI-powered analysis">
+                    <Chip
+                      size="small"
+                      label="AI"
+                      variant={svc.ai ? 'filled' : 'outlined'}
+                      color={svc.ai ? 'info' : 'default'}
+                    />
+                  </Tooltip>
+                </Box>
+              </Paper>
+            ))}
+          </Stack>
+
+          {/* Footer hint */}
+          <Box sx={{ mt: 2.5, px: 1, py: 1, bgcolor: 'action.hover', borderRadius: 2 }}>
+            <Typography variant="caption" sx={{ display: 'block', opacity: 0.8 }}>
+              Tip: You can switch languages anytime. Your last choice stays selected.
+            </Typography>
+          </Box>
+        </Box>
+      )}
     </Paper>
   )
 }
