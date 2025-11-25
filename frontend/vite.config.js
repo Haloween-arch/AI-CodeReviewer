@@ -6,29 +6,44 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api/syntax": {
+      // 🚀 All analysis requests -> API Gateway (FastAPI)
+      "/api": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api/, ""),
+      },
+
+      // OPTIONAL: direct microservice debugging (if needed)
+      "/svc/syntax": {
         target: "http://127.0.0.1:8002",
-        rewrite: (p) => p.replace("/api/syntax", ""),
+        rewrite: (p) => p.replace(/^\/svc\/syntax/, ""),
       },
-      "/api/style": {
+      "/svc/style": {
         target: "http://127.0.0.1:8001",
-        rewrite: (p) => p.replace("/api/style", ""),
+        rewrite: (p) => p.replace(/^\/svc\/style/, ""),
       },
-      "/api/security": {
+      "/svc/security": {
         target: "http://127.0.0.1:8003",
-        rewrite: (p) => p.replace("/api/security", ""),
+        rewrite: (p) => p.replace(/^\/svc\/security/, ""),
       },
-      "/api/quality": {
+      "/svc/quality": {
         target: "http://127.0.0.1:8004",
-        rewrite: (p) => p.replace("/api/quality", ""),
+        rewrite: (p) => p.replace(/^\/svc\/quality/, ""),
       },
-      "/api/rule": {
+      "/svc/rule": {
         target: "http://127.0.0.1:8006",
-        rewrite: (p) => p.replace("/api/rule", ""),
+        rewrite: (p) => p.replace(/^\/svc\/rule/, ""),
       },
-      "/api/report": {
+      "/svc/report": {
         target: "http://127.0.0.1:8007",
-        rewrite: (p) => p.replace("/api/report", ""),
+        rewrite: (p) => p.replace(/^\/svc\/report/, ""),
+      },
+
+      // 🚀 NEW — MongoDB Analytics Microservice (future)
+      "/history": {
+        target: "http://127.0.0.1:8008",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/history/, ""),
       },
     },
   },

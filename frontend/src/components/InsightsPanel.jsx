@@ -1,3 +1,4 @@
+// src/components/InsightsPanel.jsx
 import React, { useMemo } from "react";
 import {
   Card,
@@ -19,10 +20,12 @@ import {
   Paper,
   LinearProgress,
 } from "@mui/material";
+
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import ErrorIcon from "@mui/icons-material/Error";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+
 import {
   ResponsiveContainer,
   BarChart,
@@ -147,23 +150,23 @@ export default function InsightsPanel({ results }) {
 
   // Enhanced score data with targets
   const scoreData = [
-    { 
-      name: "Quality", 
+    {
+      name: "Quality",
       score: summary.qualityScore ?? 0,
       target: 85,
-      color: GRADIENT_PRIMARY[0]
+      color: GRADIENT_PRIMARY[0],
     },
-    { 
-      name: "Security", 
+    {
+      name: "Security",
       score: summary.securityScore ?? 0,
       target: 90,
-      color: GRADIENT_SEC[0]
+      color: GRADIENT_SEC[0],
     },
-    { 
-      name: "Performance", 
+    {
+      name: "Performance",
       score: summary.performanceScore ?? 0,
       target: 80,
-      color: "#10b981"
+      color: "#10b981",
     },
   ];
 
@@ -193,7 +196,7 @@ export default function InsightsPanel({ results }) {
   const topFiles = (summary.topRiskFiles || []).slice(0, 8);
   const issuesByFile = useMemo(() => {
     if (topFiles.length) return topFiles.map((f) => ({ file: f.name, score: f.score, issues: f.count }));
-    
+
     const map = {};
     issues.forEach((it) => {
       const file = it.file || "unknown";
@@ -205,20 +208,21 @@ export default function InsightsPanel({ results }) {
     return Object.values(map).sort((a, b) => b.score - a.score).slice(0, 8);
   }, [issues, topFiles]);
 
-  const complexityBuckets = (summary.timeComplexityBreakdown || [
-    { label: "O(1)", count: 12, color: COLORS[3] },
-    { label: "O(log n)", count: 8, color: COLORS[2] },
-    { label: "O(n)", count: 25, color: COLORS[2] },
-    { label: "O(n log n)", count: 6, color: COLORS[1] },
-    { label: "O(n²)", count: 3, color: COLORS[0] },
-  ]);
+  const complexityBuckets =
+    summary.timeComplexityBreakdown || [
+      { label: "O(1)", count: 12, color: COLORS[3] },
+      { label: "O(log n)", count: 8, color: COLORS[2] },
+      { label: "O(n)", count: 25, color: COLORS[2] },
+      { label: "O(n log n)", count: 6, color: COLORS[1] },
+      { label: "O(n²)", count: 3, color: COLORS[0] },
+    ];
 
   const hotspotScore =
     (summary.critical ?? 0) * 4 + (summary.high ?? 0) * 3 + (summary.medium ?? 0) * 2 + (summary.low ?? 0);
-  const hotspotLabel =
-    hotspotScore >= 12 ? "High Risk" : hotspotScore >= 6 ? "Moderate" : "Low Risk";
-  
-  const totalIssues = (summary.critical ?? 0) + (summary.high ?? 0) + (summary.medium ?? 0) + (summary.low ?? 0);
+  const hotspotLabel = hotspotScore >= 12 ? "High Risk" : hotspotScore >= 6 ? "Moderate" : "Low Risk";
+
+  const totalIssues =
+    (summary.critical ?? 0) + (summary.high ?? 0) + (summary.medium ?? 0) + (summary.low ?? 0);
 
   // Radar chart data for multi-dimensional analysis
   const radarData = [
@@ -290,7 +294,14 @@ export default function InsightsPanel({ results }) {
                   <ReTooltip content={<CustomTooltip />} />
                   <Legend />
                   <Bar dataKey="score" fill="#6366f1" radius={[8, 8, 0, 0]} barSize={50} name="Current Score" />
-                  <Line type="monotone" dataKey="target" stroke="#ef4444" strokeWidth={2} name="Target" strokeDasharray="5 5" />
+                  <Line
+                    type="monotone"
+                    dataKey="target"
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                    name="Target"
+                    strokeDasharray="5 5"
+                  />
                 </ComposedChart>
               </ResponsiveContainer>
             </Box>
@@ -315,7 +326,7 @@ export default function InsightsPanel({ results }) {
                     innerRadius={70}
                     outerRadius={120}
                     paddingAngle={4}
-                    label={(entry) => entry.value > 0 ? `${entry.name}: ${entry.value}` : ''}
+                    label={(entry) => (entry.value > 0 ? `${entry.name}: ${entry.value}` : "")}
                   >
                     {severityData.map((entry, i) => (
                       <Cell key={`c-${i}`} fill={entry.color} />
@@ -351,20 +362,20 @@ export default function InsightsPanel({ results }) {
                   <YAxis yAxisId="right" orientation="right" tick={{ fill: "#94a3b8" }} />
                   <ReTooltip content={<CustomTooltip />} />
                   <Legend />
-                  <Area 
+                  <Area
                     yAxisId="left"
-                    type="monotone" 
-                    dataKey="score" 
-                    stroke="#60a5fa" 
-                    fill="url(#perfGrad)" 
+                    type="monotone"
+                    dataKey="score"
+                    stroke="#60a5fa"
+                    fill="url(#perfGrad)"
                     strokeWidth={3}
                     name="Quality Score"
                   />
-                  <Line 
+                  <Line
                     yAxisId="right"
-                    type="monotone" 
-                    dataKey="issues" 
-                    stroke="#ef4444" 
+                    type="monotone"
+                    dataKey="issues"
+                    stroke="#ef4444"
                     strokeWidth={2}
                     name="Issue Count"
                     dot={{ fill: "#ef4444", r: 4 }}
@@ -453,48 +464,45 @@ export default function InsightsPanel({ results }) {
                       return (
                         <TableRow key={i} hover>
                           <TableCell>
-                            <Chip 
-                              label={`#${i + 1}`} 
-                              size="small" 
-                              color={i === 0 ? "error" : i === 1 ? "warning" : "default"}
-                            />
+                            <Chip label={`#${i + 1}`} size="small" color={i === 0 ? "error" : i === 1 ? "warning" : "default"} />
                           </TableCell>
                           <TableCell>
-                            <Typography sx={{ fontWeight: 600, fontFamily: "monospace" }}>
-                              {f.file}
-                            </Typography>
+                            <Typography sx={{ fontWeight: 600, fontFamily: "monospace" }}>{f.file}</Typography>
                           </TableCell>
                           <TableCell align="center">
                             <Chip label={f.issues} size="small" />
                           </TableCell>
                           <TableCell align="center">
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <LinearProgress 
-                                variant="determinate" 
-                                value={(f.score / 16) * 100} 
-                                sx={{ 
-                                  flex: 1, 
-                                  height: 8, 
+                              <LinearProgress
+                                variant="determinate"
+                                value={(f.score / 16) * 100}
+                                sx={{
+                                  flex: 1,
+                                  height: 8,
                                   borderRadius: 1,
                                   backgroundColor: "#334155",
-                                  '& .MuiLinearProgress-bar': {
-                                    backgroundColor: riskLevel === "critical" ? "#ef4444" : 
-                                                    riskLevel === "high" ? "#f97316" : 
-                                                    riskLevel === "medium" ? "#eab308" : "#22c55e"
-                                  }
-                                }} 
+                                  "& .MuiLinearProgress-bar": {
+                                    backgroundColor:
+                                      riskLevel === "critical"
+                                        ? "#ef4444"
+                                        : riskLevel === "high"
+                                        ? "#f97316"
+                                        : riskLevel === "medium"
+                                        ? "#eab308"
+                                        : "#22c55e",
+                                  },
+                                }}
                               />
                               <Typography sx={{ fontWeight: 700, minWidth: 30 }}>{f.score}</Typography>
                             </Box>
                           </TableCell>
                           <TableCell align="center">
-                            <Chip 
-                              label={riskLevel.toUpperCase()} 
+                            <Chip
+                              label={riskLevel.toUpperCase()}
                               size="small"
                               color={
-                                riskLevel === "critical" ? "error" :
-                                riskLevel === "high" ? "warning" :
-                                riskLevel === "medium" ? "info" : "success"
+                                riskLevel === "critical" ? "error" : riskLevel === "high" ? "warning" : riskLevel === "medium" ? "info" : "success"
                               }
                             />
                           </TableCell>
@@ -532,13 +540,11 @@ export default function InsightsPanel({ results }) {
                       <TableCell>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                           {getSeverityIcon(issue.severity)}
-                          <Chip 
-                            label={issue.severity?.toUpperCase()} 
+                          <Chip
+                            label={issue.severity?.toUpperCase()}
                             size="small"
                             color={
-                              issue.severity === "critical" ? "error" :
-                              issue.severity === "high" ? "warning" :
-                              issue.severity === "medium" ? "info" : "success"
+                              issue.severity === "critical" ? "error" : issue.severity === "high" ? "warning" : issue.severity === "medium" ? "info" : "success"
                             }
                           />
                         </Box>
@@ -550,9 +556,7 @@ export default function InsightsPanel({ results }) {
                         <Chip label={issue.type?.toUpperCase()} size="small" variant="outlined" />
                       </TableCell>
                       <TableCell align="center">
-                        <Typography sx={{ fontFamily: "monospace", fontWeight: 700 }}>
-                          {issue.line || "-"}
-                        </Typography>
+                        <Typography sx={{ fontFamily: "monospace", fontWeight: 700 }}>{issue.line || "-"}</Typography>
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" color="text.secondary">

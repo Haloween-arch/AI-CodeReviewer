@@ -1,3 +1,5 @@
-pymongo 
-fastapi 
+fastapi
 uvicorn
+pymongo
+python-dotenv
+pydantic

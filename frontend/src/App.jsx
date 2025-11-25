@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ThemeProvider,
   createTheme,
@@ -26,6 +26,9 @@ import InsightsPanel from "./components/InsightsPanel";
 import EditorPane from "./components/EditorPane";
 
 import { analyzeAll } from "./services/api";
+import axios from "axios";   // ⭐ added for history-service communication
+
+const HISTORY_API = "http://127.0.0.1:8010/history";
 
 export default function App() {
   const theme = createTheme({
@@ -44,9 +47,25 @@ export default function App() {
   const [code, setCode] = useState("// paste or upload code here");
   const [language, setLanguage] = useState("python");
   const [results, setResults] = useState(null);
+  const [history, setHistory] = useState([]);      // ⭐ new: to store last N runs
   const [loading, setLoading] = useState(false);
 
-  // ✅ Upload + auto-detect language
+  // ⭐ fetch history from backend
+  const loadHistory = async () => {
+    try {
+      const res = await axios.get(`${HISTORY_API}/latest`);
+      setHistory(res.data?.history || []);
+    } catch (err) {
+      console.warn("History load failed", err);
+    }
+  };
+
+  // ⭐ auto-load history when switching to Insights
+  useEffect(() => {
+    if (tab === 2) loadHistory();
+  }, [tab]);
+
+  // Upload + auto-detect language
   const onUpload = (text, filename) => {
     setCode(text);
 
@@ -64,13 +83,33 @@ export default function App() {
     setLanguage(langMap[ext] || "javascript");
   };
 
-  // ✅ Trigger backend analysis
+  // ⭐ Save analysis result to DB
+  const saveHistory = async (payload) => {
+    try {
+      await axios.post(`${HISTORY_API}/save`, payload);
+    } catch (error) {
+      console.warn("History save failed:", error);
+    }
+  };
+
+  // Trigger backend analysis
   const onReview = async () => {
     setLoading(true);
     try {
       const res = await analyzeAll(code, language);
+
       setResults(res);
-      setTab(1); // move to results tab
+
+      // ⭐ Save run in DB
+      await saveHistory({
+        language,
+        codeSnippet: code.slice(0, 5000),
+        summary: res.summary,
+        issues: res.issues,
+        timestamp: Date.now(),
+      });
+
+      setTab(1);
     } catch (e) {
       console.error("Review failed:", e);
       alert("Analysis failed. Check backend logs.");
@@ -78,7 +117,7 @@ export default function App() {
     setLoading(false);
   };
 
-  // ✅ Hidden file input
+  // Hidden file input
   const FileUpload = () => (
     <>
       <input
@@ -112,10 +151,8 @@ export default function App() {
       <CssBaseline />
 
       <Box className="app-container" sx={{ display: "flex", height: "100vh" }}>
-        {/* ✅ Sidebar */}
         <Sidebar language={language} onPickLang={setLanguage} />
 
-        {/* ✅ Main Content */}
         <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
           <AppBar position="static" sx={{ background: "#1e293b" }}>
             <Toolbar>
@@ -126,10 +163,8 @@ export default function App() {
 
               <Box sx={{ flex: 1 }} />
 
-              {/* ✅ Upload button */}
               <FileUpload />
 
-              {/* ✅ Review button */}
               <Button
                 variant="contained"
                 onClick={onReview}
@@ -144,7 +179,6 @@ export default function App() {
             {loading && <LinearProgress />}
           </AppBar>
 
-          {/* ✅ Tabs */}
           <Tabs
             value={tab}
             onChange={(_, v) => setTab(v)}
@@ -159,7 +193,6 @@ export default function App() {
             <Tab label="Insights" icon={<AssessmentIcon />} />
           </Tabs>
 
-          {/* ✅ Page Content */}
           <Box sx={{ flexGrow: 1, p: 2, overflow: "auto" }}>
             {tab === 0 && (
               <EditorPane code={code} language={language} onChange={setCode} />
@@ -167,7 +200,9 @@ export default function App() {
 
             {tab === 1 && <IssuesPanel results={results} />}
 
-            {tab === 2 && <InsightsPanel results={results} />}
+            {tab === 2 && (
+              <InsightsPanel results={results} history={history} /> // ⭐ NEW
+            )}
           </Box>
         </Box>
       </Box>
